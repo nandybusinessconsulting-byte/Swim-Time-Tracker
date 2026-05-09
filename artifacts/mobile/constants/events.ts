@@ -1,4 +1,5 @@
 export type StrokeType = 'Free' | 'Back' | 'Breast' | 'Fly' | 'IM';
+export type EventCourse = 'SCY' | 'LCM' | 'both';
 
 export interface SwimEvent {
   id: string;
@@ -6,24 +7,42 @@ export interface SwimEvent {
   distance: number;
   stroke: StrokeType;
   sortOrder: number;
+  applicableTo: EventCourse;
 }
 
 export const EVENTS: SwimEvent[] = [
-  { id: '50free',    displayName: '50 Free',    distance: 50,   stroke: 'Free',   sortOrder: 1 },
-  { id: '100free',   displayName: '100 Free',   distance: 100,  stroke: 'Free',   sortOrder: 2 },
-  { id: '200free',   displayName: '200 Free',   distance: 200,  stroke: 'Free',   sortOrder: 3 },
-  { id: '500free',   displayName: '500 Free',   distance: 500,  stroke: 'Free',   sortOrder: 4 },
-  { id: '1000free',  displayName: '1000 Free',  distance: 1000, stroke: 'Free',   sortOrder: 5 },
-  { id: '1650free',  displayName: '1650 Free',  distance: 1650, stroke: 'Free',   sortOrder: 6 },
-  { id: '100back',   displayName: '100 Back',   distance: 100,  stroke: 'Back',   sortOrder: 7 },
-  { id: '200back',   displayName: '200 Back',   distance: 200,  stroke: 'Back',   sortOrder: 8 },
-  { id: '100breast', displayName: '100 Breast', distance: 100,  stroke: 'Breast', sortOrder: 9 },
-  { id: '200breast', displayName: '200 Breast', distance: 200,  stroke: 'Breast', sortOrder: 10 },
-  { id: '100fly',    displayName: '100 Fly',    distance: 100,  stroke: 'Fly',    sortOrder: 11 },
-  { id: '200fly',    displayName: '200 Fly',    distance: 200,  stroke: 'Fly',    sortOrder: 12 },
-  { id: '200im',     displayName: '200 IM',     distance: 200,  stroke: 'IM',     sortOrder: 13 },
-  { id: '400im',     displayName: '400 IM',     distance: 400,  stroke: 'IM',     sortOrder: 14 },
+  // ─── Both course types ───────────────────────────────────────────────────────
+  { id: '50free',    displayName: '50 Free',    distance: 50,   stroke: 'Free',   sortOrder: 1,  applicableTo: 'both' },
+  { id: '100free',   displayName: '100 Free',   distance: 100,  stroke: 'Free',   sortOrder: 2,  applicableTo: 'both' },
+  { id: '200free',   displayName: '200 Free',   distance: 200,  stroke: 'Free',   sortOrder: 3,  applicableTo: 'both' },
+  { id: '100back',   displayName: '100 Back',   distance: 100,  stroke: 'Back',   sortOrder: 7,  applicableTo: 'both' },
+  { id: '200back',   displayName: '200 Back',   distance: 200,  stroke: 'Back',   sortOrder: 8,  applicableTo: 'both' },
+  { id: '100breast', displayName: '100 Breast', distance: 100,  stroke: 'Breast', sortOrder: 9,  applicableTo: 'both' },
+  { id: '200breast', displayName: '200 Breast', distance: 200,  stroke: 'Breast', sortOrder: 10, applicableTo: 'both' },
+  { id: '100fly',    displayName: '100 Fly',    distance: 100,  stroke: 'Fly',    sortOrder: 11, applicableTo: 'both' },
+  { id: '200fly',    displayName: '200 Fly',    distance: 200,  stroke: 'Fly',    sortOrder: 12, applicableTo: 'both' },
+  { id: '200im',     displayName: '200 IM',     distance: 200,  stroke: 'IM',     sortOrder: 13, applicableTo: 'both' },
+  { id: '400im',     displayName: '400 IM',     distance: 400,  stroke: 'IM',     sortOrder: 14, applicableTo: 'both' },
+
+  // ─── SCY only ────────────────────────────────────────────────────────────────
+  { id: '500free',   displayName: '500 Free',   distance: 500,  stroke: 'Free',   sortOrder: 4,  applicableTo: 'SCY' },
+  { id: '1000free',  displayName: '1000 Free',  distance: 1000, stroke: 'Free',   sortOrder: 5,  applicableTo: 'SCY' },
+  { id: '1650free',  displayName: '1650 Free',  distance: 1650, stroke: 'Free',   sortOrder: 6,  applicableTo: 'SCY' },
+
+  // ─── LCM only ────────────────────────────────────────────────────────────────
+  { id: '400free',   displayName: '400 Free',   distance: 400,  stroke: 'Free',   sortOrder: 4,  applicableTo: 'LCM' },
+  { id: '800free',   displayName: '800 Free',   distance: 800,  stroke: 'Free',   sortOrder: 5,  applicableTo: 'LCM' },
+  { id: '1500free',  displayName: '1500 Free',  distance: 1500, stroke: 'Free',   sortOrder: 6,  applicableTo: 'LCM' },
 ];
+
+export function getEventsForCourse(courseType: 'SCY' | 'LCM'): SwimEvent[] {
+  return EVENTS
+    .filter(e => e.applicableTo === 'both' || e.applicableTo === courseType)
+    .sort((a, b) => {
+      if (a.stroke !== b.stroke) return a.stroke.localeCompare(b.stroke);
+      return a.sortOrder - b.sortOrder;
+    });
+}
 
 export function getEventById(id: string): SwimEvent | undefined {
   return EVENTS.find(e => e.id === id);
