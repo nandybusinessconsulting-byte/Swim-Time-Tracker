@@ -13,8 +13,8 @@ import {
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { EVENTS, STROKE_COLORS } from '@/constants/events';
-import { AGE_GROUPS, get2026Times } from '@/constants/standards';
-import type { AgeGroup, Gender } from '@/context/SwimContext';
+import { AGE_GROUPS, COURSE_TYPES, get2026Times } from '@/constants/standards';
+import type { AgeGroup, CourseType, Gender } from '@/context/SwimContext';
 import { useSwim } from '@/context/SwimContext';
 import { useColors } from '@/hooks/useColors';
 import {
@@ -29,15 +29,9 @@ const GENDERS: { value: Gender; label: string }[] = [
 ];
 
 function DeltaRow({
-  label,
-  standardTime,
-  delta,
-  accentColor,
+  label, standardTime, delta, accentColor,
 }: {
-  label: string;
-  standardTime: number | null;
-  delta: number | null;
-  accentColor: string;
+  label: string; standardTime: number | null; delta: number | null; accentColor: string;
 }) {
   const colors = useColors();
   if (standardTime === null) {
@@ -60,14 +54,13 @@ function DeltaRow({
       </View>
       {delta !== null ? (
         <View style={drStyles.rowRight}>
-          {qualified ? (
-            <Text style={[drStyles.qtText, { color: accentColor }]}>✓  Qualified</Text>
-          ) : (
-            <>
-              <Text style={[drStyles.deltaNum, { color: colors.foreground }]}>{formatDelta(delta)}</Text>
-              <Text style={[drStyles.toGo, { color: colors.mutedForeground }]}>to go</Text>
-            </>
-          )}
+          {qualified
+            ? <Text style={[drStyles.qtText, { color: accentColor }]}>✓  Qualified</Text>
+            : <>
+                <Text style={[drStyles.deltaNum, { color: colors.foreground }]}>{formatDelta(delta)}</Text>
+                <Text style={[drStyles.toGo, { color: colors.mutedForeground }]}>to go</Text>
+              </>
+          }
         </View>
       ) : (
         <Text style={[drStyles.noStd, { color: colors.mutedForeground }]}>Enter a time above</Text>
@@ -93,8 +86,8 @@ export default function LogScreen() {
   const insets = useSafeAreaInsets();
   const {
     timeEntries,
-    selectedGender, selectedAgeGroup,
-    setSelectedGender, setSelectedAgeGroup,
+    selectedGender, selectedAgeGroup, selectedCourseType,
+    setSelectedGender, setSelectedAgeGroup, setSelectedCourseType,
     addTimeEntry, deleteTimeEntry,
     getBestTimeForEvent,
   } = useSwim();
@@ -107,18 +100,18 @@ export default function LogScreen() {
   const webTop = Platform.OS === 'web' ? 67 : 0;
 
   const std = useMemo(() => {
-    return get2026Times(selectedAgeGroup, selectedGender, selectedEventId);
-  }, [selectedGender, selectedAgeGroup, selectedEventId]);
+    return get2026Times(selectedAgeGroup, selectedGender, selectedEventId, selectedCourseType);
+  }, [selectedGender, selectedAgeGroup, selectedEventId, selectedCourseType]);
 
   const goldDelta = parsedTime !== null && std.gold !== null ? parsedTime - std.gold : null;
   const zoneDelta = parsedTime !== null && std.zone !== null ? parsedTime - std.zone : null;
 
   const recentEntries = useMemo(() => {
     return [...timeEntries]
-      .filter(e => e.gender === selectedGender && e.ageGroup === selectedAgeGroup)
+      .filter(e => e.gender === selectedGender && e.ageGroup === selectedAgeGroup && e.courseType === selectedCourseType)
       .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
       .slice(0, 30);
-  }, [timeEntries, selectedGender, selectedAgeGroup]);
+  }, [timeEntries, selectedGender, selectedAgeGroup, selectedCourseType]);
 
   async function handleSave() {
     if (!parsedTime) return;
@@ -127,6 +120,7 @@ export default function LogScreen() {
     await addTimeEntry({
       gender: selectedGender,
       ageGroup: selectedAgeGroup,
+      courseType: selectedCourseType,
       eventId: selectedEventId,
       timeHundredths: parsedTime,
     });
@@ -139,44 +133,47 @@ export default function LogScreen() {
   return (
     <View style={[styles.container, { backgroundColor: colors.background }]}>
 
-      {/* Fixed header — gender + age group pickers */}
+      {/* Fixed header */}
       <View style={[styles.header, {
         backgroundColor: colors.card,
         borderBottomColor: colors.border,
         paddingTop: insets.top + webTop + 8,
       }]}>
+        {/* Row 1: title + gender */}
         <View style={styles.headerRow}>
           <Text style={[styles.headerTitle, { color: colors.foreground }]}>Log Time</Text>
           <View style={styles.genderToggle}>
             {GENDERS.map(g => (
-              <TouchableOpacity
-                key={g.value}
-                style={[styles.genderBtn, {
-                  backgroundColor: selectedGender === g.value ? colors.primary : colors.secondary,
-                  borderColor: selectedGender === g.value ? colors.primary : colors.border,
-                }]}
+              <TouchableOpacity key={g.value}
+                style={[styles.genderBtn, { backgroundColor: selectedGender === g.value ? colors.primary : colors.secondary, borderColor: selectedGender === g.value ? colors.primary : colors.border }]}
                 onPress={() => setSelectedGender(g.value)}
               >
-                <Text style={[styles.genderBtnText, { color: selectedGender === g.value ? '#FFF' : colors.foreground }]}>
-                  {g.label}
-                </Text>
+                <Text style={[styles.genderBtnText, { color: selectedGender === g.value ? '#FFF' : colors.foreground }]}>{g.label}</Text>
               </TouchableOpacity>
             ))}
           </View>
         </View>
-        <View style={styles.ageRow}>
+
+        {/* Row 2: age group */}
+        <View style={[styles.pickerRow, { marginBottom: 10 }]}>
           {AGE_GROUPS.map(ag => (
-            <TouchableOpacity
-              key={ag}
-              style={[styles.ageBtn, {
-                backgroundColor: selectedAgeGroup === ag ? colors.primary : colors.secondary,
-                borderColor: selectedAgeGroup === ag ? colors.primary : colors.border,
-              }]}
+            <TouchableOpacity key={ag}
+              style={[styles.ageBtn, { backgroundColor: selectedAgeGroup === ag ? colors.primary : colors.secondary, borderColor: selectedAgeGroup === ag ? colors.primary : colors.border }]}
               onPress={() => setSelectedAgeGroup(ag as AgeGroup)}
             >
-              <Text style={[styles.ageBtnText, { color: selectedAgeGroup === ag ? '#FFF' : colors.foreground }]}>
-                {ag}
-              </Text>
+              <Text style={[styles.ageBtnText, { color: selectedAgeGroup === ag ? '#FFF' : colors.foreground }]}>{ag}</Text>
+            </TouchableOpacity>
+          ))}
+        </View>
+
+        {/* Row 3: course type */}
+        <View style={styles.pickerRow}>
+          {COURSE_TYPES.map(ct => (
+            <TouchableOpacity key={ct}
+              style={[styles.courseBtn, { backgroundColor: selectedCourseType === ct ? colors.foreground : colors.secondary, borderColor: selectedCourseType === ct ? colors.foreground : colors.border }]}
+              onPress={() => setSelectedCourseType(ct as CourseType)}
+            >
+              <Text style={[styles.courseBtnText, { color: selectedCourseType === ct ? colors.background : colors.foreground }]}>{ct}</Text>
             </TouchableOpacity>
           ))}
         </View>
@@ -185,14 +182,11 @@ export default function LogScreen() {
       {/* Scrollable body */}
       <ScrollView
         style={styles.scroll}
-        contentContainerStyle={[
-          styles.scrollContent,
-          { paddingBottom: insets.bottom + (Platform.OS === 'web' ? 34 : 0) + 40 },
-        ]}
+        contentContainerStyle={[styles.scrollContent, { paddingBottom: insets.bottom + (Platform.OS === 'web' ? 34 : 0) + 40 }]}
         showsVerticalScrollIndicator={false}
         keyboardShouldPersistTaps="handled"
       >
-        {/* Event — grouped by stroke */}
+        {/* Event */}
         <View style={styles.section}>
           <Text style={[styles.sectionLabel, { color: colors.mutedForeground }]}>EVENT</Text>
           <View style={styles.strokeGroups}>
@@ -213,9 +207,7 @@ export default function LogScreen() {
                           style={[styles.eventChip, { backgroundColor: isSel ? sc : colors.card, borderColor: isSel ? sc + '99' : colors.border }]}
                           onPress={() => setSelectedEventId(e.id)}
                         >
-                          <Text style={[styles.eventChipText, { color: isSel ? '#FFF' : colors.foreground }]}>
-                            {e.distance}m
-                          </Text>
+                          <Text style={[styles.eventChipText, { color: isSel ? '#FFF' : colors.foreground }]}>{e.distance}m</Text>
                         </TouchableOpacity>
                       );
                     })}
@@ -247,7 +239,7 @@ export default function LogScreen() {
           </View>
         </View>
 
-        {/* Gold + Zone comparison */}
+        {/* Result */}
         <View style={styles.section}>
           <Text style={[styles.sectionLabel, { color: colors.mutedForeground }]}>RESULT</Text>
           <View style={styles.deltaStack}>
@@ -269,7 +261,7 @@ export default function LogScreen() {
           </Text>
         </TouchableOpacity>
 
-        {/* Recent times */}
+        {/* Recent */}
         {recentEntries.length > 0 && (
           <>
             <Text style={[styles.sectionLabel, { color: colors.mutedForeground, marginBottom: 10 }]}>RECENT TIMES</Text>
@@ -277,45 +269,29 @@ export default function LogScreen() {
               const event = EVENTS.find(e => e.id === entry.eventId);
               if (!event) return null;
               const sc = STROKE_COLORS[event.stroke];
-              const best = getBestTimeForEvent(entry.gender, entry.ageGroup, entry.eventId);
+              const best = getBestTimeForEvent(entry.gender, entry.ageGroup, entry.courseType, entry.eventId);
               const isPB = best?.id === entry.id;
-              const es = get2026Times(entry.ageGroup, entry.gender, entry.eventId);
+              const es = get2026Times(entry.ageGroup, entry.gender, entry.eventId, entry.courseType);
               const gd = es.gold !== null ? entry.timeHundredths - es.gold : null;
               const zd = es.zone !== null ? entry.timeHundredths - es.zone : null;
               const dateStr = new Date(entry.date).toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
-
               return (
                 <View key={entry.id} style={[styles.recentCard, { backgroundColor: colors.card, borderColor: colors.border, marginBottom: 8 }]}>
                   <View style={[styles.recentStroke, { backgroundColor: sc }]} />
                   <View style={styles.recentInfo}>
                     <View style={styles.recentNameRow}>
                       <Text style={[styles.recentEvent, { color: colors.foreground }]}>{event.displayName}</Text>
-                      {isPB && (
-                        <View style={[styles.pbBadge, { backgroundColor: colors.primary + '20' }]}>
-                          <Text style={[styles.pbText, { color: colors.primary }]}>PB</Text>
-                        </View>
-                      )}
+                      {isPB && <View style={[styles.pbBadge, { backgroundColor: colors.primary + '20' }]}><Text style={[styles.pbText, { color: colors.primary }]}>PB</Text></View>}
                     </View>
                     <Text style={[styles.recentDate, { color: colors.mutedForeground }]}>{dateStr}</Text>
                     <View style={styles.recentDeltas}>
-                      {gd !== null && (
-                        <Text style={[styles.recentDelta, { color: gd <= 0 ? '#D97706' : colors.mutedForeground }]}>
-                          {gd <= 0 ? '🥇 QT' : `Gold ${formatDelta(gd)}`}
-                        </Text>
-                      )}
-                      {zd !== null && (
-                        <Text style={[styles.recentDelta, { color: zd <= 0 ? colors.primary : colors.mutedForeground }]}>
-                          {zd <= 0 ? '🌊 QT' : `Zone ${formatDelta(zd)}`}
-                        </Text>
-                      )}
+                      {gd !== null && <Text style={[styles.recentDelta, { color: gd <= 0 ? '#D97706' : colors.mutedForeground }]}>{gd <= 0 ? '🥇 QT' : `Gold ${formatDelta(gd)}`}</Text>}
+                      {zd !== null && <Text style={[styles.recentDelta, { color: zd <= 0 ? colors.primary : colors.mutedForeground }]}>{zd <= 0 ? '🌊 QT' : `Zone ${formatDelta(zd)}`}</Text>}
                     </View>
                   </View>
                   <View style={styles.recentRight}>
                     <Text style={[styles.recentTime, { color: colors.foreground }]}>{formatHundredthsToTime(entry.timeHundredths)}</Text>
-                    <TouchableOpacity
-                      onPress={() => { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); deleteTimeEntry(entry.id); }}
-                      style={styles.deleteBtn}
-                    >
+                    <TouchableOpacity onPress={() => { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); deleteTimeEntry(entry.id); }} style={styles.deleteBtn}>
                       <Feather name="trash-2" size={13} color={colors.destructive} />
                     </TouchableOpacity>
                   </View>
@@ -332,17 +308,19 @@ export default function LogScreen() {
 const styles = StyleSheet.create({
   container: { flex: 1 },
   header: { paddingHorizontal: 20, paddingBottom: 14, borderBottomWidth: StyleSheet.hairlineWidth },
-  headerRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 14 },
+  headerRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 },
   headerTitle: { fontFamily: 'Inter_700Bold', fontSize: 24 },
   genderToggle: { flexDirection: 'row', gap: 6 },
   genderBtn: { paddingHorizontal: 14, paddingVertical: 7, borderRadius: 20, borderWidth: 1 },
   genderBtnText: { fontFamily: 'Inter_600SemiBold', fontSize: 13 },
-  ageRow: { flexDirection: 'row', gap: 8 },
-  ageBtn: { flex: 1, alignItems: 'center', paddingVertical: 8, borderRadius: 10, borderWidth: 1 },
+  pickerRow: { flexDirection: 'row', gap: 8 },
+  ageBtn: { flex: 1, alignItems: 'center', paddingVertical: 7, borderRadius: 10, borderWidth: 1 },
   ageBtnText: { fontFamily: 'Inter_600SemiBold', fontSize: 13 },
+  courseBtn: { paddingHorizontal: 20, paddingVertical: 7, borderRadius: 10, borderWidth: 1 },
+  courseBtnText: { fontFamily: 'Inter_700Bold', fontSize: 13, letterSpacing: 0.5 },
   scroll: { flex: 1 },
   scrollContent: { paddingHorizontal: 20, paddingTop: 20 },
-  section: { marginBottom: 22 },
+  section: { marginBottom: 20 },
   sectionLabel: { fontFamily: 'Inter_600SemiBold', fontSize: 11, letterSpacing: 0.8, marginBottom: 10 },
   strokeGroups: { gap: 10 },
   strokeGroup: { flexDirection: 'row', alignItems: 'center', gap: 8 },
@@ -352,9 +330,9 @@ const styles = StyleSheet.create({
   strokeChips: { flexDirection: 'row', flexWrap: 'wrap', gap: 6, flex: 1 },
   eventChip: { paddingHorizontal: 12, paddingVertical: 7, borderRadius: 16, borderWidth: 1 },
   eventChipText: { fontFamily: 'Inter_600SemiBold', fontSize: 13 },
-  timeCard: { borderRadius: 14, borderWidth: 1.5, paddingHorizontal: 20, paddingVertical: 18, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
-  timeInput: { fontFamily: 'Inter_700Bold', fontSize: 40, flex: 1 },
-  parsedDisplay: { fontFamily: 'Inter_600SemiBold', fontSize: 14 },
+  timeCard: { borderRadius: 14, borderWidth: 1.5, paddingHorizontal: 16, paddingVertical: 12, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
+  timeInput: { fontFamily: 'Inter_700Bold', fontSize: 32, flex: 1 },
+  parsedDisplay: { fontFamily: 'Inter_600SemiBold', fontSize: 13 },
   deltaStack: { gap: 10 },
   saveBtn: { height: 52, borderRadius: 14, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, marginBottom: 28 },
   saveBtnText: { fontFamily: 'Inter_600SemiBold', fontSize: 17 },

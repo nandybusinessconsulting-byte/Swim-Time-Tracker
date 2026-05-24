@@ -1,6 +1,7 @@
 export type Gender = 'M' | 'F';
 export type AgeGroup = '10&U' | '11-12' | '13-14' | '15-18';
-export type CourseType = 'LCM';
+export type CourseType = 'LCM' | 'SCY' | 'SCM';
+export const COURSE_TYPES: CourseType[] = ['LCM', 'SCY', 'SCM'];
 
 export const AGE_GROUPS: AgeGroup[] = ['10&U', '11-12', '13-14', '15-18'];
 
@@ -340,6 +341,8 @@ export const STANDARDS_2026: Record<string, EventMap> = {
 };
 
 // ─── Lookup ───────────────────────────────────────────────────────────────────
-export function get2026Times(ageGroup: AgeGroup, gender: Gender, eventId: string): StandardTimes {
+// Only LCM data exists for 2026. SCY/SCM return nulls — ready for future seasons.
+export function get2026Times(ageGroup: AgeGroup, gender: Gender, eventId: string, courseType: CourseType = 'LCM'): StandardTimes {
+  if (courseType !== 'LCM') return { silver: null, gold: null, zone: null };
   return STANDARDS_2026[eventId]?.[ageGroup]?.[gender] ?? { silver: null, gold: null, zone: null };
 }

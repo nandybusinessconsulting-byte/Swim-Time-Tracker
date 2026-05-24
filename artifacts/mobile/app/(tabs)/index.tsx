@@ -12,8 +12,8 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { EmptyState } from '@/components/EmptyState';
 import { EVENTS, STROKE_COLORS } from '@/constants/events';
-import { AGE_GROUPS } from '@/constants/standards';
-import type { AgeGroup, Gender } from '@/context/SwimContext';
+import { AGE_GROUPS, COURSE_TYPES } from '@/constants/standards';
+import type { AgeGroup, CourseType, Gender } from '@/context/SwimContext';
 import { useSwim } from '@/context/SwimContext';
 import { useColors } from '@/hooks/useColors';
 import { formatDelta, formatHundredthsToTime } from '@/utils/timeUtils';
@@ -57,8 +57,8 @@ export default function TrackerScreen() {
   const insets = useSafeAreaInsets();
   const {
     timeEntries,
-    selectedGender, selectedAgeGroup,
-    setSelectedGender, setSelectedAgeGroup,
+    selectedGender, selectedAgeGroup, selectedCourseType,
+    setSelectedGender, setSelectedAgeGroup, setSelectedCourseType,
     getBestTimeForEvent, getStandardTimes,
   } = useSwim();
 
@@ -67,9 +67,9 @@ export default function TrackerScreen() {
   const eventsWithTimes = useMemo(() => {
     return EVENTS
       .map(event => {
-        const best = getBestTimeForEvent(selectedGender, selectedAgeGroup, event.id);
+        const best = getBestTimeForEvent(selectedGender, selectedAgeGroup, selectedCourseType, event.id);
         if (!best) return null;
-        const std = getStandardTimes(selectedGender, selectedAgeGroup, event.id);
+        const std = getStandardTimes(selectedGender, selectedAgeGroup, selectedCourseType, event.id);
         const goldDelta = std.gold !== null ? best.timeHundredths - std.gold : null;
         const zoneDelta = std.zone !== null ? best.timeHundredths - std.zone : null;
         return { event, best, std, goldDelta, zoneDelta };
@@ -81,7 +81,7 @@ export default function TrackerScreen() {
         goldDelta: number | null;
         zoneDelta: number | null;
       }>;
-  }, [selectedGender, selectedAgeGroup, timeEntries]);
+  }, [selectedGender, selectedAgeGroup, selectedCourseType, timeEntries]);
 
   const goldQualified = eventsWithTimes.filter(e => (e.goldDelta ?? 1) <= 0).length;
   const zoneQualified = eventsWithTimes.filter(e => (e.zoneDelta ?? 1) <= 0).length;
@@ -92,7 +92,7 @@ export default function TrackerScreen() {
       <View style={[styles.header, { backgroundColor: colors.card, borderBottomColor: colors.border, paddingTop: insets.top + webTop + 8 }]}>
         <View style={styles.headerRow}>
           <View>
-            <Text style={[styles.headerSub, { color: colors.mutedForeground }]}>2026 LCM Standards</Text>
+            <Text style={[styles.headerSub, { color: colors.mutedForeground }]}>2026 Standards</Text>
             <Text style={[styles.headerTitle, { color: colors.foreground }]}>SwimTrack</Text>
           </View>
           <View style={styles.genderToggle}>
@@ -110,24 +110,35 @@ export default function TrackerScreen() {
           </View>
         </View>
 
-        {/* Age group picker */}
-        <View style={styles.ageRow}>
+        {/* Age group */}
+        <View style={[styles.chipRow, { marginBottom: 10 }]}>
           {AGE_GROUPS.map(ag => (
             <TouchableOpacity
               key={ag}
               style={[styles.ageBtn, { backgroundColor: selectedAgeGroup === ag ? colors.primary : colors.secondary, borderColor: selectedAgeGroup === ag ? colors.primary : colors.border }]}
               onPress={() => setSelectedAgeGroup(ag as AgeGroup)}
             >
-              <Text style={[styles.ageBtnText, { color: selectedAgeGroup === ag ? '#FFF' : colors.foreground }]}>
-                {ag}
-              </Text>
+              <Text style={[styles.ageBtnText, { color: selectedAgeGroup === ag ? '#FFF' : colors.foreground }]}>{ag}</Text>
+            </TouchableOpacity>
+          ))}
+        </View>
+
+        {/* Course type */}
+        <View style={styles.chipRow}>
+          {COURSE_TYPES.map(ct => (
+            <TouchableOpacity
+              key={ct}
+              style={[styles.courseBtn, { backgroundColor: selectedCourseType === ct ? colors.foreground : colors.secondary, borderColor: selectedCourseType === ct ? colors.foreground : colors.border }]}
+              onPress={() => setSelectedCourseType(ct as CourseType)}
+            >
+              <Text style={[styles.courseBtnText, { color: selectedCourseType === ct ? colors.background : colors.foreground }]}>{ct}</Text>
             </TouchableOpacity>
           ))}
         </View>
       </View>
 
       {eventsWithTimes.length === 0 ? (
-        <EmptyState icon="clock" title="No times logged yet" subtitle="Go to the Log tab to record a time. Each entry instantly shows your Gold and Zone deltas." />
+        <EmptyState icon="clock" title="No times logged yet" subtitle={`Go to the Log tab to record a ${selectedCourseType} time.`} />
       ) : (
         <>
           {/* Stats bar */}
@@ -188,15 +199,17 @@ export default function TrackerScreen() {
 const styles = StyleSheet.create({
   container: { flex: 1 },
   header: { paddingHorizontal: 20, paddingBottom: 14, borderBottomWidth: StyleSheet.hairlineWidth },
-  headerRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 14 },
+  headerRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 },
   headerSub: { fontFamily: 'Inter_400Regular', fontSize: 12, marginBottom: 2 },
   headerTitle: { fontFamily: 'Inter_700Bold', fontSize: 24 },
   genderToggle: { flexDirection: 'row', gap: 6 },
   genderBtn: { paddingHorizontal: 14, paddingVertical: 7, borderRadius: 20, borderWidth: 1 },
   genderBtnText: { fontFamily: 'Inter_600SemiBold', fontSize: 13 },
-  ageRow: { flexDirection: 'row', gap: 8 },
-  ageBtn: { flex: 1, alignItems: 'center', paddingVertical: 8, borderRadius: 10, borderWidth: 1 },
+  chipRow: { flexDirection: 'row', gap: 8 },
+  ageBtn: { flex: 1, alignItems: 'center', paddingVertical: 7, borderRadius: 10, borderWidth: 1 },
   ageBtnText: { fontFamily: 'Inter_600SemiBold', fontSize: 13 },
+  courseBtn: { paddingHorizontal: 18, paddingVertical: 7, borderRadius: 10, borderWidth: 1 },
+  courseBtnText: { fontFamily: 'Inter_700Bold', fontSize: 13, letterSpacing: 0.4 },
   statsBar: { flexDirection: 'row', alignItems: 'center', paddingVertical: 14, paddingHorizontal: 20, borderBottomWidth: StyleSheet.hairlineWidth },
   statItem: { flex: 1, alignItems: 'center' },
   statNum: { fontFamily: 'Inter_700Bold', fontSize: 22 },

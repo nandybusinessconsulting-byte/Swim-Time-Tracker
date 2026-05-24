@@ -44,6 +44,7 @@ A mobile app for swim parents to track their child's times against 2026 LCM qual
 - Times stored as integer hundredths of seconds for reliable arithmetic
 - Delta calculation: swimmer's time − standard time (negative = qualified)
 - **Two standards only:** 2026 LCM Silver/Gold cuts and 2026 EZ Zone LCM qualifying times
+- **Course type:** `LCM | SCY | SCM` is a first-class field on every time entry and filter header; SCY/SCM return null standards today (ready for future seasons)
 - Age group always computed from `birthYear` at runtime — never stored (avoids stale data)
 - Meets no longer store course type (app is LCM-only)
 - Designed to add Clerk/Replit auth + backend persistence in a future iteration
