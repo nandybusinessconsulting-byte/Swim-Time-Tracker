@@ -64,7 +64,7 @@ function ClassicTabLayout() {
       <Tabs.Screen
         name="log"
         options={{
-          title: 'Log',
+          title: 'Track Cuts',
           tabBarIcon: ({ color }) =>
             isIOS ? (
               <SymbolView name="plus.circle" tintColor={color} size={24} />
