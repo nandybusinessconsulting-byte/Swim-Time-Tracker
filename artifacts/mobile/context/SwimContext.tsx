@@ -7,6 +7,12 @@ import { generateId } from '@/utils/timeUtils';
 
 export type { AgeGroup, CourseType, Gender };
 
+export interface VisibleStandards {
+  silver: boolean;
+  gold: boolean;
+  zone: boolean;
+}
+
 export interface TimeEntry {
   id: string;
   gender: Gender;
@@ -22,11 +28,13 @@ interface SwimContextType {
   selectedGender: Gender;
   selectedAgeGroup: AgeGroup;
   selectedCourseType: CourseType;
+  visibleStandards: VisibleStandards;
   isLoaded: boolean;
 
   setSelectedGender: (g: Gender) => void;
   setSelectedAgeGroup: (ag: AgeGroup) => void;
   setSelectedCourseType: (ct: CourseType) => void;
+  setVisibleStandards: (v: VisibleStandards) => void;
 
   addTimeEntry: (entry: Omit<TimeEntry, 'id' | 'date'>) => Promise<void>;
   deleteTimeEntry: (id: string) => Promise<void>;
@@ -42,16 +50,20 @@ const KEYS = {
   settings:    '@swim_settings_v5',
 };
 
+const DEFAULT_VISIBLE: VisibleStandards = { silver: true, gold: true, zone: true };
+
 export function SwimProvider({ children }: { children: React.ReactNode }) {
   const [timeEntries, setTimeEntries] = useState<TimeEntry[]>([]);
   const [selectedGender, setGenderState] = useState<Gender>('F');
   const [selectedAgeGroup, setAgeGroupState] = useState<AgeGroup>('11-12');
   const [selectedCourseType, setCourseTypeState] = useState<CourseType>('LCM');
+  const [visibleStandards, setVisibleState] = useState<VisibleStandards>(DEFAULT_VISIBLE);
   const [isLoaded, setIsLoaded] = useState(false);
 
   const genderRef = useRef<Gender>('F');
   const ageGroupRef = useRef<AgeGroup>('11-12');
   const courseTypeRef = useRef<CourseType>('LCM');
+  const visibleRef = useRef<VisibleStandards>(DEFAULT_VISIBLE);
 
   useEffect(() => { loadAll(); }, []);
 
@@ -62,7 +74,6 @@ export function SwimProvider({ children }: { children: React.ReactNode }) {
         AsyncStorage.getItem(KEYS.settings),
       ]);
       if (te) {
-        // Migrate: add courseType if missing from older entries
         const entries = (JSON.parse(te) as Array<Record<string, unknown>>).map(e => ({
           courseType: 'LCM' as CourseType,
           ...e,
@@ -78,6 +89,10 @@ export function SwimProvider({ children }: { children: React.ReactNode }) {
         if (s.selectedCourseType && COURSE_TYPES.includes(s.selectedCourseType)) {
           setCourseTypeState(s.selectedCourseType); courseTypeRef.current = s.selectedCourseType;
         }
+        if (s.visibleStandards) {
+          const v = { ...DEFAULT_VISIBLE, ...s.visibleStandards };
+          setVisibleState(v); visibleRef.current = v;
+        }
       }
     } catch (e) {
       console.warn('Failed to load swim data:', e);
@@ -86,26 +101,37 @@ export function SwimProvider({ children }: { children: React.ReactNode }) {
     }
   }
 
-  function persistSettings(gender: Gender, ageGroup: AgeGroup, courseType: CourseType) {
-    AsyncStorage.setItem(KEYS.settings, JSON.stringify({ selectedGender: gender, selectedAgeGroup: ageGroup, selectedCourseType: courseType }));
+  function persistSettings(gender: Gender, ageGroup: AgeGroup, courseType: CourseType, visible: VisibleStandards) {
+    AsyncStorage.setItem(KEYS.settings, JSON.stringify({
+      selectedGender: gender,
+      selectedAgeGroup: ageGroup,
+      selectedCourseType: courseType,
+      visibleStandards: visible,
+    }));
   }
 
   const setSelectedGender = useCallback((g: Gender) => {
     genderRef.current = g;
     setGenderState(g);
-    persistSettings(g, ageGroupRef.current, courseTypeRef.current);
+    persistSettings(g, ageGroupRef.current, courseTypeRef.current, visibleRef.current);
   }, []);
 
   const setSelectedAgeGroup = useCallback((ag: AgeGroup) => {
     ageGroupRef.current = ag;
     setAgeGroupState(ag);
-    persistSettings(genderRef.current, ag, courseTypeRef.current);
+    persistSettings(genderRef.current, ag, courseTypeRef.current, visibleRef.current);
   }, []);
 
   const setSelectedCourseType = useCallback((ct: CourseType) => {
     courseTypeRef.current = ct;
     setCourseTypeState(ct);
-    persistSettings(genderRef.current, ageGroupRef.current, ct);
+    persistSettings(genderRef.current, ageGroupRef.current, ct, visibleRef.current);
+  }, []);
+
+  const setVisibleStandards = useCallback((v: VisibleStandards) => {
+    visibleRef.current = v;
+    setVisibleState(v);
+    persistSettings(genderRef.current, ageGroupRef.current, courseTypeRef.current, v);
   }, []);
 
   const addTimeEntry = useCallback(async (entry: Omit<TimeEntry, 'id' | 'date'>) => {
@@ -140,9 +166,9 @@ export function SwimProvider({ children }: { children: React.ReactNode }) {
   return (
     <SwimContext.Provider value={{
       timeEntries,
-      selectedGender, selectedAgeGroup, selectedCourseType,
+      selectedGender, selectedAgeGroup, selectedCourseType, visibleStandards,
       isLoaded,
-      setSelectedGender, setSelectedAgeGroup, setSelectedCourseType,
+      setSelectedGender, setSelectedAgeGroup, setSelectedCourseType, setVisibleStandards,
       addTimeEntry, deleteTimeEntry,
       getBestTimeForEvent, getStandardTimes,
     }}>

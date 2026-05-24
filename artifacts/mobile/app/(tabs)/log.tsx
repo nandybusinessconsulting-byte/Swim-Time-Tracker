@@ -86,8 +86,8 @@ export default function LogScreen() {
   const insets = useSafeAreaInsets();
   const {
     timeEntries,
-    selectedGender, selectedAgeGroup, selectedCourseType,
-    setSelectedGender, setSelectedAgeGroup, setSelectedCourseType,
+    selectedGender, selectedAgeGroup, selectedCourseType, visibleStandards,
+    setSelectedGender, setSelectedAgeGroup, setSelectedCourseType, setVisibleStandards,
     addTimeEntry, deleteTimeEntry,
     getBestTimeForEvent,
   } = useSwim();
@@ -242,11 +242,34 @@ export default function LogScreen() {
 
         {/* Result */}
         <View style={styles.section}>
-          <Text style={[styles.sectionLabel, { color: colors.mutedForeground }]}>RESULT</Text>
+          <View style={styles.resultHeader}>
+            <Text style={[styles.sectionLabel, { color: colors.mutedForeground }]}>RESULT</Text>
+            <View style={styles.toggleRow}>
+              {([
+                { key: 'silver', label: 'Silver', color: '#6B7280' },
+                { key: 'gold',   label: 'Gold',   color: '#D97706' },
+                { key: 'zone',   label: 'Zone',   color: colors.primary },
+              ] as const).map(({ key, label, color }) => {
+                const on = visibleStandards[key];
+                return (
+                  <TouchableOpacity
+                    key={key}
+                    style={[styles.toggleChip, { backgroundColor: on ? color + '20' : colors.secondary, borderColor: on ? color + '60' : colors.border }]}
+                    onPress={() => setVisibleStandards({ ...visibleStandards, [key]: !on })}
+                  >
+                    <Text style={[styles.toggleChipText, { color: on ? color : colors.mutedForeground }]}>{label}</Text>
+                  </TouchableOpacity>
+                );
+              })}
+            </View>
+          </View>
           <View style={styles.deltaStack}>
-            <DeltaRow label="🥈  NJ Silver cut" standardTime={std.silver} delta={silverDelta} accentColor="#6B7280" />
-            <DeltaRow label="🥇  NJ Gold cut" standardTime={std.gold} delta={goldDelta} accentColor="#D97706" />
-            <DeltaRow label="🌊  Eastern Zone cut" standardTime={std.zone} delta={zoneDelta} accentColor={colors.primary} />
+            {visibleStandards.silver && <DeltaRow label="🥈  NJ Silver cut"     standardTime={std.silver} delta={silverDelta} accentColor="#6B7280" />}
+            {visibleStandards.gold   && <DeltaRow label="🥇  NJ Gold cut"       standardTime={std.gold}   delta={goldDelta}   accentColor="#D97706" />}
+            {visibleStandards.zone   && <DeltaRow label="🌊  Eastern Zone cut"  standardTime={std.zone}   delta={zoneDelta}   accentColor={colors.primary} />}
+            {!visibleStandards.silver && !visibleStandards.gold && !visibleStandards.zone && (
+              <Text style={[styles.allHiddenText, { color: colors.mutedForeground }]}>Tap a chip above to show standards</Text>
+            )}
           </View>
         </View>
 
@@ -323,7 +346,12 @@ const styles = StyleSheet.create({
   scroll: { flex: 1 },
   scrollContent: { paddingHorizontal: 20, paddingTop: 20 },
   section: { marginBottom: 20 },
-  sectionLabel: { fontFamily: 'Inter_600SemiBold', fontSize: 11, letterSpacing: 0.8, marginBottom: 10 },
+  sectionLabel: { fontFamily: 'Inter_600SemiBold', fontSize: 11, letterSpacing: 0.8 },
+  resultHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 },
+  toggleRow: { flexDirection: 'row', gap: 6 },
+  toggleChip: { paddingHorizontal: 10, paddingVertical: 4, borderRadius: 8, borderWidth: 1 },
+  toggleChipText: { fontFamily: 'Inter_600SemiBold', fontSize: 11 },
+  allHiddenText: { fontFamily: 'Inter_400Regular', fontSize: 13, fontStyle: 'italic', textAlign: 'center', paddingVertical: 12 },
   strokeGroups: { gap: 10 },
   strokeGroup: { flexDirection: 'row', alignItems: 'center', gap: 8 },
   strokeLabel: { flexDirection: 'row', alignItems: 'center', gap: 5, paddingHorizontal: 9, paddingVertical: 5, borderRadius: 8, minWidth: 62 },
