@@ -144,7 +144,7 @@ export default function LogScreen() {
       }]}>
         {/* Row 1: title + gender */}
         <View style={styles.headerRow}>
-          <Text style={[styles.headerTitle, { color: colors.foreground }]}>Time Cuts</Text>
+          <Text style={[styles.headerTitle, { color: colors.foreground }]}>2026 Time Cuts</Text>
           <View style={styles.genderToggle}>
             {GENDERS.map(g => (
               <TouchableOpacity key={g.value}
