@@ -138,46 +138,60 @@ export default function LogScreen() {
 
   return (
     <View style={[styles.container, { backgroundColor: colors.background }]}>
-      <ScrollView
-        showsVerticalScrollIndicator={false}
-        keyboardShouldPersistTaps="handled"
-        contentContainerStyle={[
-          styles.scrollContent,
-          { paddingTop: insets.top + webTop + 8, paddingBottom: insets.bottom + (Platform.OS === 'web' ? 34 : 0) + 40 },
-        ]}
-      >
-        <Text style={[styles.pageTitle, { color: colors.foreground }]}>Log Time</Text>
 
-        {/* Gender */}
-        <View style={styles.section}>
-          <Text style={[styles.sectionLabel, { color: colors.mutedForeground }]}>GENDER</Text>
-          <View style={styles.chipRow}>
+      {/* Fixed header — gender + age group pickers */}
+      <View style={[styles.header, {
+        backgroundColor: colors.card,
+        borderBottomColor: colors.border,
+        paddingTop: insets.top + webTop + 8,
+      }]}>
+        <View style={styles.headerRow}>
+          <Text style={[styles.headerTitle, { color: colors.foreground }]}>Log Time</Text>
+          <View style={styles.genderToggle}>
             {GENDERS.map(g => (
-              <TouchableOpacity key={g.value}
-                style={[styles.chip, { backgroundColor: selectedGender === g.value ? colors.primary : colors.card, borderColor: selectedGender === g.value ? colors.primary : colors.border }]}
+              <TouchableOpacity
+                key={g.value}
+                style={[styles.genderBtn, {
+                  backgroundColor: selectedGender === g.value ? colors.primary : colors.secondary,
+                  borderColor: selectedGender === g.value ? colors.primary : colors.border,
+                }]}
                 onPress={() => setSelectedGender(g.value)}
               >
-                <Text style={[styles.chipText, { color: selectedGender === g.value ? '#FFF' : colors.foreground }]}>{g.label}</Text>
+                <Text style={[styles.genderBtnText, { color: selectedGender === g.value ? '#FFF' : colors.foreground }]}>
+                  {g.label}
+                </Text>
               </TouchableOpacity>
             ))}
           </View>
         </View>
-
-        {/* Age group */}
-        <View style={styles.section}>
-          <Text style={[styles.sectionLabel, { color: colors.mutedForeground }]}>AGE GROUP</Text>
-          <View style={styles.chipRow}>
-            {AGE_GROUPS.map(ag => (
-              <TouchableOpacity key={ag}
-                style={[styles.chip, { backgroundColor: selectedAgeGroup === ag ? colors.primary : colors.card, borderColor: selectedAgeGroup === ag ? colors.primary : colors.border }]}
-                onPress={() => setSelectedAgeGroup(ag as AgeGroup)}
-              >
-                <Text style={[styles.chipText, { color: selectedAgeGroup === ag ? '#FFF' : colors.foreground }]}>{ag}</Text>
-              </TouchableOpacity>
-            ))}
-          </View>
+        <View style={styles.ageRow}>
+          {AGE_GROUPS.map(ag => (
+            <TouchableOpacity
+              key={ag}
+              style={[styles.ageBtn, {
+                backgroundColor: selectedAgeGroup === ag ? colors.primary : colors.secondary,
+                borderColor: selectedAgeGroup === ag ? colors.primary : colors.border,
+              }]}
+              onPress={() => setSelectedAgeGroup(ag as AgeGroup)}
+            >
+              <Text style={[styles.ageBtnText, { color: selectedAgeGroup === ag ? '#FFF' : colors.foreground }]}>
+                {ag}
+              </Text>
+            </TouchableOpacity>
+          ))}
         </View>
+      </View>
 
+      {/* Scrollable body */}
+      <ScrollView
+        style={styles.scroll}
+        contentContainerStyle={[
+          styles.scrollContent,
+          { paddingBottom: insets.bottom + (Platform.OS === 'web' ? 34 : 0) + 40 },
+        ]}
+        showsVerticalScrollIndicator={false}
+        keyboardShouldPersistTaps="handled"
+      >
         {/* Event — grouped by stroke */}
         <View style={styles.section}>
           <Text style={[styles.sectionLabel, { color: colors.mutedForeground }]}>EVENT</Text>
@@ -268,8 +282,7 @@ export default function LogScreen() {
               const es = get2026Times(entry.ageGroup, entry.gender, entry.eventId);
               const gd = es.gold !== null ? entry.timeHundredths - es.gold : null;
               const zd = es.zone !== null ? entry.timeHundredths - es.zone : null;
-              const entryDate = new Date(entry.date);
-              const dateStr = entryDate.toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
+              const dateStr = new Date(entry.date).toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
 
               return (
                 <View key={entry.id} style={[styles.recentCard, { backgroundColor: colors.card, borderColor: colors.border, marginBottom: 8 }]}>
@@ -318,13 +331,19 @@ export default function LogScreen() {
 
 const styles = StyleSheet.create({
   container: { flex: 1 },
-  scrollContent: { paddingHorizontal: 20 },
-  pageTitle: { fontFamily: 'Inter_700Bold', fontSize: 28, marginBottom: 24 },
+  header: { paddingHorizontal: 20, paddingBottom: 14, borderBottomWidth: StyleSheet.hairlineWidth },
+  headerRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 14 },
+  headerTitle: { fontFamily: 'Inter_700Bold', fontSize: 24 },
+  genderToggle: { flexDirection: 'row', gap: 6 },
+  genderBtn: { paddingHorizontal: 14, paddingVertical: 7, borderRadius: 20, borderWidth: 1 },
+  genderBtnText: { fontFamily: 'Inter_600SemiBold', fontSize: 13 },
+  ageRow: { flexDirection: 'row', gap: 8 },
+  ageBtn: { flex: 1, alignItems: 'center', paddingVertical: 8, borderRadius: 10, borderWidth: 1 },
+  ageBtnText: { fontFamily: 'Inter_600SemiBold', fontSize: 13 },
+  scroll: { flex: 1 },
+  scrollContent: { paddingHorizontal: 20, paddingTop: 20 },
   section: { marginBottom: 22 },
   sectionLabel: { fontFamily: 'Inter_600SemiBold', fontSize: 11, letterSpacing: 0.8, marginBottom: 10 },
-  chipRow: { flexDirection: 'row', gap: 8 },
-  chip: { paddingHorizontal: 16, paddingVertical: 9, borderRadius: 20, borderWidth: 1 },
-  chipText: { fontFamily: 'Inter_600SemiBold', fontSize: 14 },
   strokeGroups: { gap: 10 },
   strokeGroup: { flexDirection: 'row', alignItems: 'center', gap: 8 },
   strokeLabel: { flexDirection: 'row', alignItems: 'center', gap: 5, paddingHorizontal: 9, paddingVertical: 5, borderRadius: 8, minWidth: 62 },
