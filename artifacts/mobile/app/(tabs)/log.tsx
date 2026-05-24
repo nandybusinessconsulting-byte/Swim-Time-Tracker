@@ -214,20 +214,35 @@ export default function LogScreen() {
               )}
             </View>
 
-            {/* Event */}
+            {/* Event — grouped by stroke */}
             <View style={styles.section}>
               <Text style={[styles.sectionLabel, { color: colors.mutedForeground }]}>EVENT</Text>
-              <View style={styles.eventGrid}>
-                {EVENTS.map(e => {
-                  const isSel = selectedEventId === e.id;
-                  const sc = STROKE_COLORS[e.stroke];
+              <View style={styles.strokeGroups}>
+                {(['Free', 'Back', 'Breast', 'Fly', 'IM'] as const).map(stroke => {
+                  const strokeEvents = EVENTS.filter(e => e.stroke === stroke);
+                  const sc = STROKE_COLORS[stroke];
                   return (
-                    <TouchableOpacity key={e.id}
-                      style={[styles.eventChip, { backgroundColor: isSel ? sc : colors.card, borderColor: isSel ? sc : colors.border }]}
-                      onPress={() => setSelectedEventId(e.id)}
-                    >
-                      <Text style={[styles.chipText, { color: isSel ? '#FFF' : colors.foreground }]}>{e.displayName}</Text>
-                    </TouchableOpacity>
+                    <View key={stroke} style={styles.strokeGroup}>
+                      <View style={[styles.strokeLabel, { backgroundColor: sc + '18' }]}>
+                        <View style={[styles.strokeDot, { backgroundColor: sc }]} />
+                        <Text style={[styles.strokeLabelText, { color: sc }]}>{stroke}</Text>
+                      </View>
+                      <View style={styles.strokeChips}>
+                        {strokeEvents.map(e => {
+                          const isSel = selectedEventId === e.id;
+                          return (
+                            <TouchableOpacity key={e.id}
+                              style={[styles.eventChip, { backgroundColor: isSel ? sc : colors.card, borderColor: isSel ? sc + '99' : colors.border }]}
+                              onPress={() => setSelectedEventId(e.id)}
+                            >
+                              <Text style={[styles.eventChipText, { color: isSel ? '#FFF' : colors.foreground }]}>
+                                {e.distance}m
+                              </Text>
+                            </TouchableOpacity>
+                          );
+                        })}
+                      </View>
+                    </View>
                   );
                 })}
               </View>
@@ -351,7 +366,14 @@ const styles = StyleSheet.create({
   chip: { paddingHorizontal: 14, paddingVertical: 9, borderRadius: 20, borderWidth: 1 },
   chipText: { fontFamily: 'Inter_600SemiBold', fontSize: 14 },
   eventGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
-  eventChip: { paddingHorizontal: 14, paddingVertical: 9, borderRadius: 20, borderWidth: 1 },
+  strokeGroups: { gap: 10 },
+  strokeGroup: { flexDirection: 'row', alignItems: 'center', gap: 8 },
+  strokeLabel: { flexDirection: 'row', alignItems: 'center', gap: 5, paddingHorizontal: 9, paddingVertical: 5, borderRadius: 8, minWidth: 62 },
+  strokeDot: { width: 7, height: 7, borderRadius: 4 },
+  strokeLabelText: { fontFamily: 'Inter_600SemiBold', fontSize: 12 },
+  strokeChips: { flexDirection: 'row', flexWrap: 'wrap', gap: 6, flex: 1 },
+  eventChip: { paddingHorizontal: 12, paddingVertical: 7, borderRadius: 16, borderWidth: 1 },
+  eventChipText: { fontFamily: 'Inter_600SemiBold', fontSize: 13 },
   rowGap: { height: 10 },
   emptyMeetBtn: { flexDirection: 'row', alignItems: 'center', gap: 8, paddingHorizontal: 16, paddingVertical: 12, borderRadius: 12, borderWidth: 1 },
   addBtn: { flexDirection: 'row', alignItems: 'center', gap: 4 },
