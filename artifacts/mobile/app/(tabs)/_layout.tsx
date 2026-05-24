@@ -14,7 +14,7 @@ function NativeTabLayout() {
     <NativeTabs>
       <NativeTabs.Trigger name="log">
         <Icon sf={{ default: 'plus.circle', selected: 'plus.circle.fill' }} />
-        <Label>Log</Label>
+        <Label>Track Cuts</Label>
       </NativeTabs.Trigger>
       <NativeTabs.Trigger name="standards">
         <Icon sf={{ default: 'list.bullet.rectangle', selected: 'list.bullet.rectangle.fill' }} />
