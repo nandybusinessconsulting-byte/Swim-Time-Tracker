@@ -103,6 +103,7 @@ export default function LogScreen() {
     return get2026Times(selectedAgeGroup, selectedGender, selectedEventId, selectedCourseType);
   }, [selectedGender, selectedAgeGroup, selectedEventId, selectedCourseType]);
 
+  const silverDelta = parsedTime !== null && std.silver !== null ? parsedTime - std.silver : null;
   const goldDelta = parsedTime !== null && std.gold !== null ? parsedTime - std.gold : null;
   const zoneDelta = parsedTime !== null && std.zone !== null ? parsedTime - std.zone : null;
 
@@ -243,6 +244,7 @@ export default function LogScreen() {
         <View style={styles.section}>
           <Text style={[styles.sectionLabel, { color: colors.mutedForeground }]}>RESULT</Text>
           <View style={styles.deltaStack}>
+            <DeltaRow label="🥈  NJ Silver cut" standardTime={std.silver} delta={silverDelta} accentColor="#6B7280" />
             <DeltaRow label="🥇  NJ Gold cut" standardTime={std.gold} delta={goldDelta} accentColor="#D97706" />
             <DeltaRow label="🌊  Eastern Zone cut" standardTime={std.zone} delta={zoneDelta} accentColor={colors.primary} />
           </View>
