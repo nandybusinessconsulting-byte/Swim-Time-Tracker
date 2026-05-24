@@ -243,8 +243,8 @@ export default function LogScreen() {
         <View style={styles.section}>
           <Text style={[styles.sectionLabel, { color: colors.mutedForeground }]}>RESULT</Text>
           <View style={styles.deltaStack}>
-            <DeltaRow label="🥇  Gold" standardTime={std.gold} delta={goldDelta} accentColor="#D97706" />
-            <DeltaRow label="🌊  Zone" standardTime={std.zone} delta={zoneDelta} accentColor={colors.primary} />
+            <DeltaRow label="🥇  NJ Gold cut" standardTime={std.gold} delta={goldDelta} accentColor="#D97706" />
+            <DeltaRow label="🌊  Eastern Zone cut" standardTime={std.zone} delta={zoneDelta} accentColor={colors.primary} />
           </View>
         </View>
 
