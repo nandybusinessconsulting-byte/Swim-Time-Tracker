@@ -1,10 +1,8 @@
 import { Feather } from '@expo/vector-icons';
-import * as Haptics from 'expo-haptics';
-import React, { useMemo, useState } from 'react';
+import React, { useMemo } from 'react';
 import {
   FlatList,
   Platform,
-  ScrollView,
   StyleSheet,
   Text,
   TouchableOpacity,
@@ -13,11 +11,17 @@ import {
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { EmptyState } from '@/components/EmptyState';
-import { SwimmerSetupModal } from '@/components/SwimmerSetupModal';
 import { EVENTS, STROKE_COLORS } from '@/constants/events';
+import { AGE_GROUPS } from '@/constants/standards';
+import type { AgeGroup, Gender } from '@/context/SwimContext';
 import { useSwim } from '@/context/SwimContext';
 import { useColors } from '@/hooks/useColors';
-import { formatDelta, formatHundredthsToTime, getDeltaStatus } from '@/utils/timeUtils';
+import { formatDelta, formatHundredthsToTime } from '@/utils/timeUtils';
+
+const GENDERS: { value: Gender; label: string }[] = [
+  { value: 'F', label: 'Girls' },
+  { value: 'M', label: 'Boys' },
+];
 
 function MiniDelta({ delta, label, color }: { delta: number | null; label: string; color: string }) {
   const colors = useColors();
@@ -52,23 +56,20 @@ export default function TrackerScreen() {
   const colors = useColors();
   const insets = useSafeAreaInsets();
   const {
-    swimmers, selectedSwimmerId, timeEntries, meets,
-    setSelectedSwimmerId, getBestTimeForEvent, getStandardTimes, getSelectedSwimmer,
+    timeEntries, meets,
+    selectedGender, selectedAgeGroup,
+    setSelectedGender, setSelectedAgeGroup,
+    getBestTimeForEvent, getStandardTimes,
   } = useSwim();
 
-  const [showAddSwimmer, setShowAddSwimmer] = useState(false);
-  const [editingSwimmer, setEditingSwimmer] = useState<Parameters<typeof SwimmerSetupModal>[0]['editSwimmer']>(null);
-
-  const swimmer = getSelectedSwimmer();
   const webTop = Platform.OS === 'web' ? 67 : 0;
 
   const eventsWithTimes = useMemo(() => {
-    if (!selectedSwimmerId) return [];
     return EVENTS
       .map(event => {
-        const best = getBestTimeForEvent(selectedSwimmerId, event.id);
+        const best = getBestTimeForEvent(selectedGender, selectedAgeGroup, event.id);
         if (!best) return null;
-        const std = getStandardTimes(selectedSwimmerId, event.id);
+        const std = getStandardTimes(selectedGender, selectedAgeGroup, event.id);
         const goldDelta = std.gold !== null ? best.timeHundredths - std.gold : null;
         const zoneDelta = std.zone !== null ? best.timeHundredths - std.zone : null;
         return { event, best, std, goldDelta, zoneDelta };
@@ -80,7 +81,7 @@ export default function TrackerScreen() {
         goldDelta: number | null;
         zoneDelta: number | null;
       }>;
-  }, [selectedSwimmerId, timeEntries, swimmers]);
+  }, [selectedGender, selectedAgeGroup, timeEntries]);
 
   const goldQualified = eventsWithTimes.filter(e => (e.goldDelta ?? 1) <= 0).length;
   const zoneQualified = eventsWithTimes.filter(e => (e.zoneDelta ?? 1) <= 0).length;
@@ -92,38 +93,40 @@ export default function TrackerScreen() {
         <View style={styles.headerRow}>
           <View>
             <Text style={[styles.headerSub, { color: colors.mutedForeground }]}>2026 LCM Standards</Text>
-            <Text style={[styles.headerTitle, { color: colors.foreground }]}>
-              {swimmer ? swimmer.name : 'SwimTrack'}
-            </Text>
+            <Text style={[styles.headerTitle, { color: colors.foreground }]}>SwimTrack</Text>
           </View>
-          <TouchableOpacity style={[styles.iconBtn, { backgroundColor: colors.secondary }]} onPress={() => setShowAddSwimmer(true)}>
-            <Feather name="user-plus" size={18} color={colors.primary} />
-          </TouchableOpacity>
+          <View style={styles.genderToggle}>
+            {GENDERS.map(g => (
+              <TouchableOpacity
+                key={g.value}
+                style={[styles.genderBtn, { backgroundColor: selectedGender === g.value ? colors.primary : colors.secondary, borderColor: selectedGender === g.value ? colors.primary : colors.border }]}
+                onPress={() => setSelectedGender(g.value)}
+              >
+                <Text style={[styles.genderBtnText, { color: selectedGender === g.value ? '#FFF' : colors.foreground }]}>
+                  {g.label}
+                </Text>
+              </TouchableOpacity>
+            ))}
+          </View>
         </View>
 
-        {/* Swimmer chips */}
-        {swimmers.length > 0 && (
-          <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.chipsScroll}>
-            {swimmers.map(s => {
-              const isSel = selectedSwimmerId === s.id;
-              return (
-                <TouchableOpacity
-                  key={s.id}
-                  style={[styles.chip, { backgroundColor: isSel ? colors.primary : colors.secondary, borderColor: isSel ? colors.primary : colors.border }]}
-                  onPress={() => { Haptics.selectionAsync(); setSelectedSwimmerId(s.id); }}
-                  onLongPress={() => setEditingSwimmer(s)}
-                >
-                  <Text style={[styles.chipName, { color: isSel ? '#FFF' : colors.foreground }]}>{s.name}</Text>
-                </TouchableOpacity>
-              );
-            })}
-          </ScrollView>
-        )}
+        {/* Age group picker */}
+        <View style={styles.ageRow}>
+          {AGE_GROUPS.map(ag => (
+            <TouchableOpacity
+              key={ag}
+              style={[styles.ageBtn, { backgroundColor: selectedAgeGroup === ag ? colors.primary : colors.secondary, borderColor: selectedAgeGroup === ag ? colors.primary : colors.border }]}
+              onPress={() => setSelectedAgeGroup(ag as AgeGroup)}
+            >
+              <Text style={[styles.ageBtnText, { color: selectedAgeGroup === ag ? '#FFF' : colors.foreground }]}>
+                {ag}
+              </Text>
+            </TouchableOpacity>
+          ))}
+        </View>
       </View>
 
-      {swimmers.length === 0 ? (
-        <EmptyState icon="user" title="Add a swimmer to get started" subtitle="Track their best times against 2026 LCM Gold and EZ Zone qualifying standards." actionLabel="Add Swimmer" onAction={() => setShowAddSwimmer(true)} />
-      ) : eventsWithTimes.length === 0 ? (
+      {eventsWithTimes.length === 0 ? (
         <EmptyState icon="clock" title="No times logged yet" subtitle="Go to the Log tab to record a time. Each entry instantly shows your Gold and Zone deltas." />
       ) : (
         <>
@@ -178,25 +181,22 @@ export default function TrackerScreen() {
           />
         </>
       )}
-
-      <SwimmerSetupModal visible={showAddSwimmer} onClose={() => setShowAddSwimmer(false)} />
-      {editingSwimmer && (
-        <SwimmerSetupModal visible={!!editingSwimmer} onClose={() => setEditingSwimmer(null)} editSwimmer={editingSwimmer} />
-      )}
     </View>
   );
 }
 
 const styles = StyleSheet.create({
   container: { flex: 1 },
-  header: { paddingHorizontal: 20, paddingBottom: 12, borderBottomWidth: StyleSheet.hairlineWidth },
+  header: { paddingHorizontal: 20, paddingBottom: 14, borderBottomWidth: StyleSheet.hairlineWidth },
   headerRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 14 },
   headerSub: { fontFamily: 'Inter_400Regular', fontSize: 12, marginBottom: 2 },
   headerTitle: { fontFamily: 'Inter_700Bold', fontSize: 24 },
-  iconBtn: { width: 40, height: 40, borderRadius: 20, alignItems: 'center', justifyContent: 'center' },
-  chipsScroll: { marginBottom: 4 },
-  chip: { marginRight: 8, paddingHorizontal: 14, paddingVertical: 8, borderRadius: 20, borderWidth: 1 },
-  chipName: { fontFamily: 'Inter_600SemiBold', fontSize: 14 },
+  genderToggle: { flexDirection: 'row', gap: 6 },
+  genderBtn: { paddingHorizontal: 14, paddingVertical: 7, borderRadius: 20, borderWidth: 1 },
+  genderBtnText: { fontFamily: 'Inter_600SemiBold', fontSize: 13 },
+  ageRow: { flexDirection: 'row', gap: 8 },
+  ageBtn: { flex: 1, alignItems: 'center', paddingVertical: 8, borderRadius: 10, borderWidth: 1 },
+  ageBtnText: { fontFamily: 'Inter_600SemiBold', fontSize: 13 },
   statsBar: { flexDirection: 'row', alignItems: 'center', paddingVertical: 14, paddingHorizontal: 20, borderBottomWidth: StyleSheet.hairlineWidth },
   statItem: { flex: 1, alignItems: 'center' },
   statNum: { fontFamily: 'Inter_700Bold', fontSize: 22 },

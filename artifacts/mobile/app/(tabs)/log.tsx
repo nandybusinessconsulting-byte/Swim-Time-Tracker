@@ -14,19 +14,21 @@ import {
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { AddMeetSheet } from '@/components/AddMeetSheet';
-import { EmptyState } from '@/components/EmptyState';
-import { SwimmerSetupModal } from '@/components/SwimmerSetupModal';
 import { EVENTS, STROKE_COLORS } from '@/constants/events';
-import { get2026Times } from '@/constants/standards';
+import { AGE_GROUPS, get2026Times } from '@/constants/standards';
+import type { AgeGroup, Gender, Meet } from '@/context/SwimContext';
 import { useSwim } from '@/context/SwimContext';
-import type { Meet } from '@/context/SwimContext';
 import { useColors } from '@/hooks/useColors';
 import {
-  birthYearToAgeGroup,
   formatDelta,
   formatHundredthsToTime,
   parseTimeToHundredths,
 } from '@/utils/timeUtils';
+
+const GENDERS: { value: Gender; label: string }[] = [
+  { value: 'F', label: 'Girls' },
+  { value: 'M', label: 'Boys' },
+];
 
 function DeltaRow({
   label,
@@ -92,9 +94,10 @@ export default function LogScreen() {
   const colors = useColors();
   const insets = useSafeAreaInsets();
   const {
-    swimmers, meets, selectedSwimmerId, timeEntries,
+    meets, timeEntries,
+    selectedGender, selectedAgeGroup,
+    setSelectedGender, setSelectedAgeGroup,
     addTimeEntry, deleteTimeEntry,
-    getSelectedSwimmer, setSelectedSwimmerId,
     getBestTimeForEvent,
   } = useSwim();
 
@@ -102,34 +105,36 @@ export default function LogScreen() {
   const [selectedEventId, setSelectedEventId] = useState<string>('50free');
   const [timeInput, setTimeInput] = useState('');
   const [showAddMeet, setShowAddMeet] = useState(false);
-  const [showAddSwimmer, setShowAddSwimmer] = useState(false);
   const [saving, setSaving] = useState(false);
 
-  const swimmer = getSelectedSwimmer();
   const parsedTime = parseTimeToHundredths(timeInput);
   const webTop = Platform.OS === 'web' ? 67 : 0;
 
   const std = useMemo(() => {
-    if (!swimmer) return { silver: null, gold: null, zone: null };
-    return get2026Times(birthYearToAgeGroup(swimmer.birthYear), swimmer.gender, selectedEventId);
-  }, [swimmer, selectedEventId]);
+    return get2026Times(selectedAgeGroup, selectedGender, selectedEventId);
+  }, [selectedGender, selectedAgeGroup, selectedEventId]);
 
   const goldDelta = parsedTime !== null && std.gold !== null ? parsedTime - std.gold : null;
   const zoneDelta = parsedTime !== null && std.zone !== null ? parsedTime - std.zone : null;
 
   const recentEntries = useMemo(() => {
-    if (!selectedSwimmerId) return [];
     return [...timeEntries]
-      .filter(e => e.swimmerId === selectedSwimmerId)
+      .filter(e => e.gender === selectedGender && e.ageGroup === selectedAgeGroup)
       .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
       .slice(0, 30);
-  }, [timeEntries, selectedSwimmerId]);
+  }, [timeEntries, selectedGender, selectedAgeGroup]);
 
   async function handleSave() {
-    if (!parsedTime || !selectedSwimmerId || !selectedMeetId) return;
+    if (!parsedTime || !selectedMeetId) return;
     setSaving(true);
     await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-    await addTimeEntry({ swimmerId: selectedSwimmerId, meetId: selectedMeetId, eventId: selectedEventId, timeHundredths: parsedTime });
+    await addTimeEntry({
+      gender: selectedGender,
+      ageGroup: selectedAgeGroup,
+      meetId: selectedMeetId,
+      eventId: selectedEventId,
+      timeHundredths: parsedTime,
+    });
     setTimeInput('');
     setSaving(false);
   }
@@ -138,16 +143,7 @@ export default function LogScreen() {
     setSelectedMeetId(meet.id);
   }
 
-  const canSave = parsedTime !== null && !!selectedSwimmerId && !!selectedMeetId;
-
-  if (swimmers.length === 0) {
-    return (
-      <View style={[styles.container, { backgroundColor: colors.background }]}>
-        <EmptyState icon="user" title="Add a swimmer first" subtitle="Go to the Tracker tab and add a swimmer to start logging times." actionLabel="Add Swimmer" onAction={() => setShowAddSwimmer(true)} />
-        <SwimmerSetupModal visible={showAddSwimmer} onClose={() => setShowAddSwimmer(false)} />
-      </View>
-    );
-  }
+  const canSave = parsedTime !== null && !!selectedMeetId;
 
   return (
     <View style={[styles.container, { backgroundColor: colors.background }]}>
@@ -161,24 +157,35 @@ export default function LogScreen() {
           <View style={{ paddingTop: insets.top + webTop + 8, paddingHorizontal: 20 }}>
             <Text style={[styles.pageTitle, { color: colors.foreground }]}>Log Time</Text>
 
-            {/* Swimmer selector (multiple swimmers only) */}
-            {swimmers.length > 1 && (
-              <View style={styles.section}>
-                <Text style={[styles.sectionLabel, { color: colors.mutedForeground }]}>SWIMMER</Text>
-                <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-                  <View style={styles.chipRow}>
-                    {swimmers.map(s => (
-                      <TouchableOpacity key={s.id}
-                        style={[styles.chip, { backgroundColor: selectedSwimmerId === s.id ? colors.primary : colors.card, borderColor: selectedSwimmerId === s.id ? colors.primary : colors.border }]}
-                        onPress={() => setSelectedSwimmerId(s.id)}
-                      >
-                        <Text style={[styles.chipText, { color: selectedSwimmerId === s.id ? '#FFF' : colors.foreground }]}>{s.name}</Text>
-                      </TouchableOpacity>
-                    ))}
-                  </View>
-                </ScrollView>
+            {/* Gender */}
+            <View style={styles.section}>
+              <Text style={[styles.sectionLabel, { color: colors.mutedForeground }]}>GENDER</Text>
+              <View style={styles.chipRow}>
+                {GENDERS.map(g => (
+                  <TouchableOpacity key={g.value}
+                    style={[styles.chip, { backgroundColor: selectedGender === g.value ? colors.primary : colors.card, borderColor: selectedGender === g.value ? colors.primary : colors.border }]}
+                    onPress={() => setSelectedGender(g.value)}
+                  >
+                    <Text style={[styles.chipText, { color: selectedGender === g.value ? '#FFF' : colors.foreground }]}>{g.label}</Text>
+                  </TouchableOpacity>
+                ))}
               </View>
-            )}
+            </View>
+
+            {/* Age group */}
+            <View style={styles.section}>
+              <Text style={[styles.sectionLabel, { color: colors.mutedForeground }]}>AGE GROUP</Text>
+              <View style={styles.chipRow}>
+                {AGE_GROUPS.map(ag => (
+                  <TouchableOpacity key={ag}
+                    style={[styles.chip, { backgroundColor: selectedAgeGroup === ag ? colors.primary : colors.card, borderColor: selectedAgeGroup === ag ? colors.primary : colors.border }]}
+                    onPress={() => setSelectedAgeGroup(ag as AgeGroup)}
+                  >
+                    <Text style={[styles.chipText, { color: selectedAgeGroup === ag ? '#FFF' : colors.foreground }]}>{ag}</Text>
+                  </TouchableOpacity>
+                ))}
+              </View>
+            </View>
 
             {/* Meet */}
             <View style={styles.section}>
@@ -301,11 +308,9 @@ export default function LogScreen() {
           if (!event) return null;
           const sc = STROKE_COLORS[event.stroke];
           const mName = meets.find(m => m.id === entry.meetId)?.name ?? '—';
-          const best = getBestTimeForEvent(selectedSwimmerId ?? '', entry.eventId);
+          const best = getBestTimeForEvent(entry.gender, entry.ageGroup, entry.eventId);
           const isPB = best?.id === entry.id;
-          const es = swimmer
-            ? get2026Times(birthYearToAgeGroup(swimmer.birthYear), swimmer.gender, entry.eventId)
-            : { silver: null, gold: null, zone: null };
+          const es = get2026Times(entry.ageGroup, entry.gender, entry.eventId);
           const gd = es.gold !== null ? entry.timeHundredths - es.gold : null;
           const zd = es.zone !== null ? entry.timeHundredths - es.zone : null;
 
@@ -363,9 +368,8 @@ const styles = StyleSheet.create({
   sectionHeaderRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
   sectionLabel: { fontFamily: 'Inter_600SemiBold', fontSize: 11, letterSpacing: 0.8, marginBottom: 10 },
   chipRow: { flexDirection: 'row', gap: 8 },
-  chip: { paddingHorizontal: 14, paddingVertical: 9, borderRadius: 20, borderWidth: 1 },
+  chip: { paddingHorizontal: 16, paddingVertical: 9, borderRadius: 20, borderWidth: 1 },
   chipText: { fontFamily: 'Inter_600SemiBold', fontSize: 14 },
-  eventGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
   strokeGroups: { gap: 10 },
   strokeGroup: { flexDirection: 'row', alignItems: 'center', gap: 8 },
   strokeLabel: { flexDirection: 'row', alignItems: 'center', gap: 5, paddingHorizontal: 9, paddingVertical: 5, borderRadius: 8, minWidth: 62 },

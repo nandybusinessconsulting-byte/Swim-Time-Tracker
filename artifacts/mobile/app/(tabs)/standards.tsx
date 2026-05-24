@@ -13,9 +13,8 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { EVENTS, STROKE_COLORS } from '@/constants/events';
 import type { AgeGroup, Gender } from '@/constants/standards';
 import { AGE_GROUPS, get2026Times } from '@/constants/standards';
-import { useSwim } from '@/context/SwimContext';
 import { useColors } from '@/hooks/useColors';
-import { birthYearToAgeGroup, formatHundredthsToTime } from '@/utils/timeUtils';
+import { formatHundredthsToTime } from '@/utils/timeUtils';
 
 function TimeCell({ value, accent }: { value: number | null; accent?: boolean }) {
   const colors = useColors();
@@ -35,13 +34,8 @@ const cellStyles = StyleSheet.create({ text: { fontSize: 12 } });
 export default function StandardsScreen() {
   const colors = useColors();
   const insets = useSafeAreaInsets();
-  const { getSelectedSwimmer } = useSwim();
-
-  const swimmer = getSelectedSwimmer();
-  const [gender, setGender] = useState<Gender>(swimmer?.gender ?? 'F');
-  const [ageGroup, setAgeGroup] = useState<AgeGroup>(
-    swimmer ? birthYearToAgeGroup(swimmer.birthYear) : '11-12'
-  );
+  const [gender, setGender] = useState<Gender>('F');
+  const [ageGroup, setAgeGroup] = useState<AgeGroup>('11-12');
 
   const webTop = Platform.OS === 'web' ? 67 : 0;
 
