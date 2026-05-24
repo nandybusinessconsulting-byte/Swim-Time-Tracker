@@ -12,10 +12,6 @@ import { useColors } from '@/hooks/useColors';
 function NativeTabLayout() {
   return (
     <NativeTabs>
-      <NativeTabs.Trigger name="index">
-        <Icon sf={{ default: 'stopwatch', selected: 'stopwatch.fill' }} />
-        <Label>Tracker</Label>
-      </NativeTabs.Trigger>
       <NativeTabs.Trigger name="log">
         <Icon sf={{ default: 'plus.circle', selected: 'plus.circle.fill' }} />
         <Label>Log</Label>
@@ -63,15 +59,7 @@ function ClassicTabLayout() {
     >
       <Tabs.Screen
         name="index"
-        options={{
-          title: 'Tracker',
-          tabBarIcon: ({ color }) =>
-            isIOS ? (
-              <SymbolView name="stopwatch" tintColor={color} size={24} />
-            ) : (
-              <Feather name="activity" size={22} color={color} />
-            ),
-        }}
+        options={{ href: null }}
       />
       <Tabs.Screen
         name="log"
