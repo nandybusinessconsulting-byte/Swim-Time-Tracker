@@ -217,22 +217,20 @@ export default function LogScreen() {
             {/* Event */}
             <View style={styles.section}>
               <Text style={[styles.sectionLabel, { color: colors.mutedForeground }]}>EVENT</Text>
-              <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-                <View style={styles.chipRow}>
-                  {EVENTS.map(e => {
-                    const isSel = selectedEventId === e.id;
-                    const sc = STROKE_COLORS[e.stroke];
-                    return (
-                      <TouchableOpacity key={e.id}
-                        style={[styles.chip, { backgroundColor: isSel ? sc : colors.card, borderColor: isSel ? sc : colors.border }]}
-                        onPress={() => setSelectedEventId(e.id)}
-                      >
-                        <Text style={[styles.chipText, { color: isSel ? '#FFF' : colors.foreground }]}>{e.displayName}</Text>
-                      </TouchableOpacity>
-                    );
-                  })}
-                </View>
-              </ScrollView>
+              <View style={styles.eventGrid}>
+                {EVENTS.map(e => {
+                  const isSel = selectedEventId === e.id;
+                  const sc = STROKE_COLORS[e.stroke];
+                  return (
+                    <TouchableOpacity key={e.id}
+                      style={[styles.eventChip, { backgroundColor: isSel ? sc : colors.card, borderColor: isSel ? sc : colors.border }]}
+                      onPress={() => setSelectedEventId(e.id)}
+                    >
+                      <Text style={[styles.chipText, { color: isSel ? '#FFF' : colors.foreground }]}>{e.displayName}</Text>
+                    </TouchableOpacity>
+                  );
+                })}
+              </View>
             </View>
 
             {/* Time input */}
@@ -352,6 +350,8 @@ const styles = StyleSheet.create({
   chipRow: { flexDirection: 'row', gap: 8 },
   chip: { paddingHorizontal: 14, paddingVertical: 9, borderRadius: 20, borderWidth: 1 },
   chipText: { fontFamily: 'Inter_600SemiBold', fontSize: 14 },
+  eventGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
+  eventChip: { paddingHorizontal: 14, paddingVertical: 9, borderRadius: 20, borderWidth: 1 },
   rowGap: { height: 10 },
   emptyMeetBtn: { flexDirection: 'row', alignItems: 'center', gap: 8, paddingHorizontal: 16, paddingVertical: 12, borderRadius: 12, borderWidth: 1 },
   addBtn: { flexDirection: 'row', alignItems: 'center', gap: 4 },
