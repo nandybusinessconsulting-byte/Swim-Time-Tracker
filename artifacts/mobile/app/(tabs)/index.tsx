@@ -56,7 +56,7 @@ export default function TrackerScreen() {
   const colors = useColors();
   const insets = useSafeAreaInsets();
   const {
-    timeEntries, meets,
+    timeEntries,
     selectedGender, selectedAgeGroup,
     setSelectedGender, setSelectedAgeGroup,
     getBestTimeForEvent, getStandardTimes,
@@ -156,7 +156,7 @@ export default function TrackerScreen() {
             renderItem={({ item }) => {
               const { event, best, goldDelta, zoneDelta } = item;
               const strokeColor = STROKE_COLORS[event.stroke];
-              const meetName = meets.find(m => m.id === best.meetId)?.name;
+              const entryDate = new Date(best.date).toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
               return (
                 <View style={[styles.card, { backgroundColor: colors.card, borderColor: colors.border }]}>
                   <View style={[styles.strokeBar, { backgroundColor: strokeColor }]} />
@@ -164,7 +164,7 @@ export default function TrackerScreen() {
                     <View style={styles.cardTop}>
                       <View style={{ flex: 1 }}>
                         <Text style={[styles.eventName, { color: colors.foreground }]}>{event.displayName}</Text>
-                        {meetName && <Text style={[styles.meetName, { color: colors.mutedForeground }]}>{meetName}</Text>}
+                        <Text style={[styles.meetName, { color: colors.mutedForeground }]}>{entryDate}</Text>
                       </View>
                       <Text style={[styles.bestTime, { color: colors.foreground }]}>
                         {formatHundredthsToTime(best.timeHundredths)}

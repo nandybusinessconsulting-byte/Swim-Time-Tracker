@@ -7,25 +7,16 @@ import { generateId } from '@/utils/timeUtils';
 
 export type { AgeGroup, Gender };
 
-export interface Meet {
-  id: string;
-  name: string;
-  date: string;
-  location: string;
-}
-
 export interface TimeEntry {
   id: string;
   gender: Gender;
   ageGroup: AgeGroup;
-  meetId: string;
   eventId: string;
   timeHundredths: number;
   date: string;
 }
 
 interface SwimContextType {
-  meets: Meet[];
   timeEntries: TimeEntry[];
   selectedGender: Gender;
   selectedAgeGroup: AgeGroup;
@@ -34,8 +25,6 @@ interface SwimContextType {
   setSelectedGender: (g: Gender) => void;
   setSelectedAgeGroup: (ag: AgeGroup) => void;
 
-  addMeet: (meet: Omit<Meet, 'id'>) => Promise<Meet>;
-  deleteMeet: (id: string) => Promise<void>;
   addTimeEntry: (entry: Omit<TimeEntry, 'id' | 'date'>) => Promise<void>;
   deleteTimeEntry: (id: string) => Promise<void>;
 
@@ -46,19 +35,16 @@ interface SwimContextType {
 const SwimContext = createContext<SwimContextType | null>(null);
 
 const KEYS = {
-  meets:       '@swim_meets',
-  timeEntries: '@swim_time_entries_v2',
+  timeEntries: '@swim_time_entries_v3',
   settings:    '@swim_settings_v4',
 };
 
 export function SwimProvider({ children }: { children: React.ReactNode }) {
-  const [meets, setMeets] = useState<Meet[]>([]);
   const [timeEntries, setTimeEntries] = useState<TimeEntry[]>([]);
   const [selectedGender, setGenderState] = useState<Gender>('F');
   const [selectedAgeGroup, setAgeGroupState] = useState<AgeGroup>('11-12');
   const [isLoaded, setIsLoaded] = useState(false);
 
-  // Refs so async persist always sees latest values
   const genderRef = useRef<Gender>('F');
   const ageGroupRef = useRef<AgeGroup>('11-12');
 
@@ -66,12 +52,10 @@ export function SwimProvider({ children }: { children: React.ReactNode }) {
 
   async function loadAll() {
     try {
-      const [mt, te, st] = await Promise.all([
-        AsyncStorage.getItem(KEYS.meets),
+      const [te, st] = await Promise.all([
         AsyncStorage.getItem(KEYS.timeEntries),
         AsyncStorage.getItem(KEYS.settings),
       ]);
-      if (mt) setMeets(JSON.parse(mt));
       if (te) setTimeEntries(JSON.parse(te));
       if (st) {
         const s = JSON.parse(st);
@@ -107,24 +91,6 @@ export function SwimProvider({ children }: { children: React.ReactNode }) {
     persistSettings(genderRef.current, ag);
   }, []);
 
-  const addMeet = useCallback(async (meet: Omit<Meet, 'id'>): Promise<Meet> => {
-    const m: Meet = { ...meet, id: generateId() };
-    setMeets(prev => {
-      const next = [...prev, m];
-      AsyncStorage.setItem(KEYS.meets, JSON.stringify(next));
-      return next;
-    });
-    return m;
-  }, []);
-
-  const deleteMeet = useCallback(async (id: string) => {
-    setMeets(prev => {
-      const next = prev.filter(m => m.id !== id);
-      AsyncStorage.setItem(KEYS.meets, JSON.stringify(next));
-      return next;
-    });
-  }, []);
-
   const addTimeEntry = useCallback(async (entry: Omit<TimeEntry, 'id' | 'date'>) => {
     const e: TimeEntry = { ...entry, id: generateId(), date: new Date().toISOString() };
     setTimeEntries(prev => {
@@ -156,11 +122,11 @@ export function SwimProvider({ children }: { children: React.ReactNode }) {
 
   return (
     <SwimContext.Provider value={{
-      meets, timeEntries,
+      timeEntries,
       selectedGender, selectedAgeGroup,
       isLoaded,
       setSelectedGender, setSelectedAgeGroup,
-      addMeet, deleteMeet, addTimeEntry, deleteTimeEntry,
+      addTimeEntry, deleteTimeEntry,
       getBestTimeForEvent, getStandardTimes,
     }}>
       {children}

@@ -2,7 +2,6 @@ import { Feather } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import React, { useMemo, useState } from 'react';
 import {
-  FlatList,
   Platform,
   ScrollView,
   StyleSheet,
@@ -13,10 +12,9 @@ import {
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { AddMeetSheet } from '@/components/AddMeetSheet';
 import { EVENTS, STROKE_COLORS } from '@/constants/events';
 import { AGE_GROUPS, get2026Times } from '@/constants/standards';
-import type { AgeGroup, Gender, Meet } from '@/context/SwimContext';
+import type { AgeGroup, Gender } from '@/context/SwimContext';
 import { useSwim } from '@/context/SwimContext';
 import { useColors } from '@/hooks/useColors';
 import {
@@ -94,17 +92,15 @@ export default function LogScreen() {
   const colors = useColors();
   const insets = useSafeAreaInsets();
   const {
-    meets, timeEntries,
+    timeEntries,
     selectedGender, selectedAgeGroup,
     setSelectedGender, setSelectedAgeGroup,
     addTimeEntry, deleteTimeEntry,
     getBestTimeForEvent,
   } = useSwim();
 
-  const [selectedMeetId, setSelectedMeetId] = useState<string | null>(meets[meets.length - 1]?.id ?? null);
   const [selectedEventId, setSelectedEventId] = useState<string>('50free');
   const [timeInput, setTimeInput] = useState('');
-  const [showAddMeet, setShowAddMeet] = useState(false);
   const [saving, setSaving] = useState(false);
 
   const parsedTime = parseTimeToHundredths(timeInput);
@@ -125,13 +121,12 @@ export default function LogScreen() {
   }, [timeEntries, selectedGender, selectedAgeGroup]);
 
   async function handleSave() {
-    if (!parsedTime || !selectedMeetId) return;
+    if (!parsedTime) return;
     setSaving(true);
     await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
     await addTimeEntry({
       gender: selectedGender,
       ageGroup: selectedAgeGroup,
-      meetId: selectedMeetId,
       eventId: selectedEventId,
       timeHundredths: parsedTime,
     });
@@ -139,233 +134,193 @@ export default function LogScreen() {
     setSaving(false);
   }
 
-  function handleMeetCreated(meet: Meet) {
-    setSelectedMeetId(meet.id);
-  }
-
-  const canSave = parsedTime !== null && !!selectedMeetId;
+  const canSave = parsedTime !== null;
 
   return (
     <View style={[styles.container, { backgroundColor: colors.background }]}>
-      <FlatList
-        data={recentEntries}
-        keyExtractor={item => item.id}
+      <ScrollView
         showsVerticalScrollIndicator={false}
-        contentContainerStyle={{ paddingBottom: insets.bottom + (Platform.OS === 'web' ? 34 : 0) + 20 }}
         keyboardShouldPersistTaps="handled"
-        ListHeaderComponent={
-          <View style={{ paddingTop: insets.top + webTop + 8, paddingHorizontal: 20 }}>
-            <Text style={[styles.pageTitle, { color: colors.foreground }]}>Log Time</Text>
+        contentContainerStyle={[
+          styles.scrollContent,
+          { paddingTop: insets.top + webTop + 8, paddingBottom: insets.bottom + (Platform.OS === 'web' ? 34 : 0) + 40 },
+        ]}
+      >
+        <Text style={[styles.pageTitle, { color: colors.foreground }]}>Log Time</Text>
 
-            {/* Gender */}
-            <View style={styles.section}>
-              <Text style={[styles.sectionLabel, { color: colors.mutedForeground }]}>GENDER</Text>
-              <View style={styles.chipRow}>
-                {GENDERS.map(g => (
-                  <TouchableOpacity key={g.value}
-                    style={[styles.chip, { backgroundColor: selectedGender === g.value ? colors.primary : colors.card, borderColor: selectedGender === g.value ? colors.primary : colors.border }]}
-                    onPress={() => setSelectedGender(g.value)}
-                  >
-                    <Text style={[styles.chipText, { color: selectedGender === g.value ? '#FFF' : colors.foreground }]}>{g.label}</Text>
-                  </TouchableOpacity>
-                ))}
-              </View>
-            </View>
+        {/* Gender */}
+        <View style={styles.section}>
+          <Text style={[styles.sectionLabel, { color: colors.mutedForeground }]}>GENDER</Text>
+          <View style={styles.chipRow}>
+            {GENDERS.map(g => (
+              <TouchableOpacity key={g.value}
+                style={[styles.chip, { backgroundColor: selectedGender === g.value ? colors.primary : colors.card, borderColor: selectedGender === g.value ? colors.primary : colors.border }]}
+                onPress={() => setSelectedGender(g.value)}
+              >
+                <Text style={[styles.chipText, { color: selectedGender === g.value ? '#FFF' : colors.foreground }]}>{g.label}</Text>
+              </TouchableOpacity>
+            ))}
+          </View>
+        </View>
 
-            {/* Age group */}
-            <View style={styles.section}>
-              <Text style={[styles.sectionLabel, { color: colors.mutedForeground }]}>AGE GROUP</Text>
-              <View style={styles.chipRow}>
-                {AGE_GROUPS.map(ag => (
-                  <TouchableOpacity key={ag}
-                    style={[styles.chip, { backgroundColor: selectedAgeGroup === ag ? colors.primary : colors.card, borderColor: selectedAgeGroup === ag ? colors.primary : colors.border }]}
-                    onPress={() => setSelectedAgeGroup(ag as AgeGroup)}
-                  >
-                    <Text style={[styles.chipText, { color: selectedAgeGroup === ag ? '#FFF' : colors.foreground }]}>{ag}</Text>
-                  </TouchableOpacity>
-                ))}
-              </View>
-            </View>
+        {/* Age group */}
+        <View style={styles.section}>
+          <Text style={[styles.sectionLabel, { color: colors.mutedForeground }]}>AGE GROUP</Text>
+          <View style={styles.chipRow}>
+            {AGE_GROUPS.map(ag => (
+              <TouchableOpacity key={ag}
+                style={[styles.chip, { backgroundColor: selectedAgeGroup === ag ? colors.primary : colors.card, borderColor: selectedAgeGroup === ag ? colors.primary : colors.border }]}
+                onPress={() => setSelectedAgeGroup(ag as AgeGroup)}
+              >
+                <Text style={[styles.chipText, { color: selectedAgeGroup === ag ? '#FFF' : colors.foreground }]}>{ag}</Text>
+              </TouchableOpacity>
+            ))}
+          </View>
+        </View>
 
-            {/* Meet */}
-            <View style={styles.section}>
-              <View style={styles.sectionHeaderRow}>
-                <Text style={[styles.sectionLabel, { color: colors.mutedForeground, marginBottom: 0 }]}>MEET</Text>
-                <TouchableOpacity style={styles.addBtn} onPress={() => setShowAddMeet(true)}>
-                  <Feather name="plus" size={13} color={colors.primary} />
-                  <Text style={[styles.addBtnText, { color: colors.primary }]}>New meet</Text>
-                </TouchableOpacity>
-              </View>
-              <View style={styles.rowGap} />
-              {meets.length === 0 ? (
-                <TouchableOpacity
-                  style={[styles.emptyMeetBtn, { borderColor: colors.primary, backgroundColor: colors.secondary }]}
-                  onPress={() => setShowAddMeet(true)}
-                >
-                  <Feather name="plus" size={16} color={colors.primary} />
-                  <Text style={[styles.chipText, { color: colors.primary }]}>Create your first meet</Text>
-                </TouchableOpacity>
-              ) : (
-                <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-                  <View style={styles.chipRow}>
-                    {[...meets].reverse().map(m => (
-                      <TouchableOpacity key={m.id}
-                        style={[styles.chip, { backgroundColor: selectedMeetId === m.id ? colors.primary : colors.card, borderColor: selectedMeetId === m.id ? colors.primary : colors.border }]}
-                        onPress={() => setSelectedMeetId(m.id)}
-                      >
-                        <Text style={[styles.chipText, { color: selectedMeetId === m.id ? '#FFF' : colors.foreground }]}>{m.name}</Text>
-                      </TouchableOpacity>
-                    ))}
+        {/* Event — grouped by stroke */}
+        <View style={styles.section}>
+          <Text style={[styles.sectionLabel, { color: colors.mutedForeground }]}>EVENT</Text>
+          <View style={styles.strokeGroups}>
+            {(['Free', 'Back', 'Breast', 'Fly', 'IM'] as const).map(stroke => {
+              const strokeEvents = EVENTS.filter(e => e.stroke === stroke);
+              const sc = STROKE_COLORS[stroke];
+              return (
+                <View key={stroke} style={styles.strokeGroup}>
+                  <View style={[styles.strokeLabel, { backgroundColor: sc + '18' }]}>
+                    <View style={[styles.strokeDot, { backgroundColor: sc }]} />
+                    <Text style={[styles.strokeLabelText, { color: sc }]}>{stroke}</Text>
                   </View>
-                </ScrollView>
-              )}
-            </View>
+                  <View style={styles.strokeChips}>
+                    {strokeEvents.map(e => {
+                      const isSel = selectedEventId === e.id;
+                      return (
+                        <TouchableOpacity key={e.id}
+                          style={[styles.eventChip, { backgroundColor: isSel ? sc : colors.card, borderColor: isSel ? sc + '99' : colors.border }]}
+                          onPress={() => setSelectedEventId(e.id)}
+                        >
+                          <Text style={[styles.eventChipText, { color: isSel ? '#FFF' : colors.foreground }]}>
+                            {e.distance}m
+                          </Text>
+                        </TouchableOpacity>
+                      );
+                    })}
+                  </View>
+                </View>
+              );
+            })}
+          </View>
+        </View>
 
-            {/* Event — grouped by stroke */}
-            <View style={styles.section}>
-              <Text style={[styles.sectionLabel, { color: colors.mutedForeground }]}>EVENT</Text>
-              <View style={styles.strokeGroups}>
-                {(['Free', 'Back', 'Breast', 'Fly', 'IM'] as const).map(stroke => {
-                  const strokeEvents = EVENTS.filter(e => e.stroke === stroke);
-                  const sc = STROKE_COLORS[stroke];
-                  return (
-                    <View key={stroke} style={styles.strokeGroup}>
-                      <View style={[styles.strokeLabel, { backgroundColor: sc + '18' }]}>
-                        <View style={[styles.strokeDot, { backgroundColor: sc }]} />
-                        <Text style={[styles.strokeLabelText, { color: sc }]}>{stroke}</Text>
-                      </View>
-                      <View style={styles.strokeChips}>
-                        {strokeEvents.map(e => {
-                          const isSel = selectedEventId === e.id;
-                          return (
-                            <TouchableOpacity key={e.id}
-                              style={[styles.eventChip, { backgroundColor: isSel ? sc : colors.card, borderColor: isSel ? sc + '99' : colors.border }]}
-                              onPress={() => setSelectedEventId(e.id)}
-                            >
-                              <Text style={[styles.eventChipText, { color: isSel ? '#FFF' : colors.foreground }]}>
-                                {e.distance}m
-                              </Text>
-                            </TouchableOpacity>
-                          );
-                        })}
-                      </View>
-                    </View>
-                  );
-                })}
-              </View>
-            </View>
-
-            {/* Time input */}
-            <View style={styles.section}>
-              <Text style={[styles.sectionLabel, { color: colors.mutedForeground }]}>YOUR TIME  (M:SS.HH)</Text>
-              <View style={[styles.timeCard, { backgroundColor: colors.card, borderColor: parsedTime !== null ? colors.primary : colors.border }]}>
-                <TextInput
-                  style={[styles.timeInput, { color: colors.foreground }]}
-                  placeholder="0:00.00"
-                  placeholderTextColor={colors.mutedForeground}
-                  value={timeInput}
-                  onChangeText={setTimeInput}
-                  keyboardType="decimal-pad"
-                  returnKeyType="done"
-                />
-                {parsedTime !== null && (
-                  <Text style={[styles.parsedDisplay, { color: colors.primary }]}>
-                    = {formatHundredthsToTime(parsedTime)}
-                  </Text>
-                )}
-              </View>
-            </View>
-
-            {/* Gold + Zone comparison */}
-            <View style={styles.section}>
-              <Text style={[styles.sectionLabel, { color: colors.mutedForeground }]}>RESULT</Text>
-              <View style={styles.deltaStack}>
-                <DeltaRow label="🥇  Gold" standardTime={std.gold} delta={goldDelta} accentColor="#D97706" />
-                <DeltaRow label="🌊  Zone" standardTime={std.zone} delta={zoneDelta} accentColor={colors.primary} />
-              </View>
-            </View>
-
-            {/* Save */}
-            <TouchableOpacity
-              style={[styles.saveBtn, { backgroundColor: canSave ? colors.primary : colors.muted, opacity: saving ? 0.7 : 1 }]}
-              onPress={handleSave}
-              disabled={!canSave || saving}
-              activeOpacity={0.8}
-            >
-              <Feather name="save" size={18} color={canSave ? colors.primaryForeground : colors.mutedForeground} />
-              <Text style={[styles.saveBtnText, { color: canSave ? colors.primaryForeground : colors.mutedForeground }]}>
-                {saving ? 'Saving…' : 'Save Time'}
+        {/* Time input */}
+        <View style={styles.section}>
+          <Text style={[styles.sectionLabel, { color: colors.mutedForeground }]}>YOUR TIME  (M:SS.HH)</Text>
+          <View style={[styles.timeCard, { backgroundColor: colors.card, borderColor: parsedTime !== null ? colors.primary : colors.border }]}>
+            <TextInput
+              style={[styles.timeInput, { color: colors.foreground }]}
+              placeholder="0:00.00"
+              placeholderTextColor={colors.mutedForeground}
+              value={timeInput}
+              onChangeText={setTimeInput}
+              keyboardType="decimal-pad"
+              returnKeyType="done"
+            />
+            {parsedTime !== null && (
+              <Text style={[styles.parsedDisplay, { color: colors.primary }]}>
+                = {formatHundredthsToTime(parsedTime)}
               </Text>
-            </TouchableOpacity>
-
-            {recentEntries.length > 0 && (
-              <Text style={[styles.sectionLabel, { color: colors.mutedForeground, marginBottom: 10 }]}>RECENT TIMES</Text>
             )}
           </View>
-        }
-        renderItem={({ item: entry }) => {
-          const event = EVENTS.find(e => e.id === entry.eventId);
-          if (!event) return null;
-          const sc = STROKE_COLORS[event.stroke];
-          const mName = meets.find(m => m.id === entry.meetId)?.name ?? '—';
-          const best = getBestTimeForEvent(entry.gender, entry.ageGroup, entry.eventId);
-          const isPB = best?.id === entry.id;
-          const es = get2026Times(entry.ageGroup, entry.gender, entry.eventId);
-          const gd = es.gold !== null ? entry.timeHundredths - es.gold : null;
-          const zd = es.zone !== null ? entry.timeHundredths - es.zone : null;
+        </View>
 
-          return (
-            <View style={{ paddingHorizontal: 20, marginBottom: 8 }}>
-              <View style={[styles.recentCard, { backgroundColor: colors.card, borderColor: colors.border }]}>
-                <View style={[styles.recentStroke, { backgroundColor: sc }]} />
-                <View style={styles.recentInfo}>
-                  <View style={styles.recentNameRow}>
-                    <Text style={[styles.recentEvent, { color: colors.foreground }]}>{event.displayName}</Text>
-                    {isPB && (
-                      <View style={[styles.pbBadge, { backgroundColor: colors.primary + '20' }]}>
-                        <Text style={[styles.pbText, { color: colors.primary }]}>PB</Text>
-                      </View>
-                    )}
+        {/* Gold + Zone comparison */}
+        <View style={styles.section}>
+          <Text style={[styles.sectionLabel, { color: colors.mutedForeground }]}>RESULT</Text>
+          <View style={styles.deltaStack}>
+            <DeltaRow label="🥇  Gold" standardTime={std.gold} delta={goldDelta} accentColor="#D97706" />
+            <DeltaRow label="🌊  Zone" standardTime={std.zone} delta={zoneDelta} accentColor={colors.primary} />
+          </View>
+        </View>
+
+        {/* Save */}
+        <TouchableOpacity
+          style={[styles.saveBtn, { backgroundColor: canSave ? colors.primary : colors.muted, opacity: saving ? 0.7 : 1 }]}
+          onPress={handleSave}
+          disabled={!canSave || saving}
+          activeOpacity={0.8}
+        >
+          <Feather name="save" size={18} color={canSave ? colors.primaryForeground : colors.mutedForeground} />
+          <Text style={[styles.saveBtnText, { color: canSave ? colors.primaryForeground : colors.mutedForeground }]}>
+            {saving ? 'Saving…' : 'Save Time'}
+          </Text>
+        </TouchableOpacity>
+
+        {/* Recent times */}
+        {recentEntries.length > 0 && (
+          <>
+            <Text style={[styles.sectionLabel, { color: colors.mutedForeground, marginBottom: 10 }]}>RECENT TIMES</Text>
+            {recentEntries.map(entry => {
+              const event = EVENTS.find(e => e.id === entry.eventId);
+              if (!event) return null;
+              const sc = STROKE_COLORS[event.stroke];
+              const best = getBestTimeForEvent(entry.gender, entry.ageGroup, entry.eventId);
+              const isPB = best?.id === entry.id;
+              const es = get2026Times(entry.ageGroup, entry.gender, entry.eventId);
+              const gd = es.gold !== null ? entry.timeHundredths - es.gold : null;
+              const zd = es.zone !== null ? entry.timeHundredths - es.zone : null;
+              const entryDate = new Date(entry.date);
+              const dateStr = entryDate.toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
+
+              return (
+                <View key={entry.id} style={[styles.recentCard, { backgroundColor: colors.card, borderColor: colors.border, marginBottom: 8 }]}>
+                  <View style={[styles.recentStroke, { backgroundColor: sc }]} />
+                  <View style={styles.recentInfo}>
+                    <View style={styles.recentNameRow}>
+                      <Text style={[styles.recentEvent, { color: colors.foreground }]}>{event.displayName}</Text>
+                      {isPB && (
+                        <View style={[styles.pbBadge, { backgroundColor: colors.primary + '20' }]}>
+                          <Text style={[styles.pbText, { color: colors.primary }]}>PB</Text>
+                        </View>
+                      )}
+                    </View>
+                    <Text style={[styles.recentDate, { color: colors.mutedForeground }]}>{dateStr}</Text>
+                    <View style={styles.recentDeltas}>
+                      {gd !== null && (
+                        <Text style={[styles.recentDelta, { color: gd <= 0 ? '#D97706' : colors.mutedForeground }]}>
+                          {gd <= 0 ? '🥇 QT' : `Gold ${formatDelta(gd)}`}
+                        </Text>
+                      )}
+                      {zd !== null && (
+                        <Text style={[styles.recentDelta, { color: zd <= 0 ? colors.primary : colors.mutedForeground }]}>
+                          {zd <= 0 ? '🌊 QT' : `Zone ${formatDelta(zd)}`}
+                        </Text>
+                      )}
+                    </View>
                   </View>
-                  <Text style={[styles.recentMeet, { color: colors.mutedForeground }]}>{mName}</Text>
-                  <View style={styles.recentDeltas}>
-                    {gd !== null && (
-                      <Text style={[styles.recentDelta, { color: gd <= 0 ? '#D97706' : colors.mutedForeground }]}>
-                        {gd <= 0 ? '🥇 QT' : `Gold ${formatDelta(gd)}`}
-                      </Text>
-                    )}
-                    {zd !== null && (
-                      <Text style={[styles.recentDelta, { color: zd <= 0 ? colors.primary : colors.mutedForeground }]}>
-                        {zd <= 0 ? '🌊 QT' : `Zone ${formatDelta(zd)}`}
-                      </Text>
-                    )}
+                  <View style={styles.recentRight}>
+                    <Text style={[styles.recentTime, { color: colors.foreground }]}>{formatHundredthsToTime(entry.timeHundredths)}</Text>
+                    <TouchableOpacity
+                      onPress={() => { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); deleteTimeEntry(entry.id); }}
+                      style={styles.deleteBtn}
+                    >
+                      <Feather name="trash-2" size={13} color={colors.destructive} />
+                    </TouchableOpacity>
                   </View>
                 </View>
-                <View style={styles.recentRight}>
-                  <Text style={[styles.recentTime, { color: colors.foreground }]}>{formatHundredthsToTime(entry.timeHundredths)}</Text>
-                  <TouchableOpacity
-                    onPress={() => { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); deleteTimeEntry(entry.id); }}
-                    style={styles.deleteBtn}
-                  >
-                    <Feather name="trash-2" size={13} color={colors.destructive} />
-                  </TouchableOpacity>
-                </View>
-              </View>
-            </View>
-          );
-        }}
-      />
-
-      <AddMeetSheet visible={showAddMeet} onClose={() => setShowAddMeet(false)} onCreated={handleMeetCreated} />
+              );
+            })}
+          </>
+        )}
+      </ScrollView>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
   container: { flex: 1 },
+  scrollContent: { paddingHorizontal: 20 },
   pageTitle: { fontFamily: 'Inter_700Bold', fontSize: 28, marginBottom: 24 },
   section: { marginBottom: 22 },
-  sectionHeaderRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
   sectionLabel: { fontFamily: 'Inter_600SemiBold', fontSize: 11, letterSpacing: 0.8, marginBottom: 10 },
   chipRow: { flexDirection: 'row', gap: 8 },
   chip: { paddingHorizontal: 16, paddingVertical: 9, borderRadius: 20, borderWidth: 1 },
@@ -378,10 +333,6 @@ const styles = StyleSheet.create({
   strokeChips: { flexDirection: 'row', flexWrap: 'wrap', gap: 6, flex: 1 },
   eventChip: { paddingHorizontal: 12, paddingVertical: 7, borderRadius: 16, borderWidth: 1 },
   eventChipText: { fontFamily: 'Inter_600SemiBold', fontSize: 13 },
-  rowGap: { height: 10 },
-  emptyMeetBtn: { flexDirection: 'row', alignItems: 'center', gap: 8, paddingHorizontal: 16, paddingVertical: 12, borderRadius: 12, borderWidth: 1 },
-  addBtn: { flexDirection: 'row', alignItems: 'center', gap: 4 },
-  addBtnText: { fontFamily: 'Inter_600SemiBold', fontSize: 13 },
   timeCard: { borderRadius: 14, borderWidth: 1.5, paddingHorizontal: 20, paddingVertical: 18, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
   timeInput: { fontFamily: 'Inter_700Bold', fontSize: 40, flex: 1 },
   parsedDisplay: { fontFamily: 'Inter_600SemiBold', fontSize: 14 },
@@ -395,7 +346,7 @@ const styles = StyleSheet.create({
   recentEvent: { fontFamily: 'Inter_600SemiBold', fontSize: 14 },
   pbBadge: { paddingHorizontal: 6, paddingVertical: 2, borderRadius: 4 },
   pbText: { fontFamily: 'Inter_700Bold', fontSize: 10 },
-  recentMeet: { fontFamily: 'Inter_400Regular', fontSize: 11, marginTop: 1 },
+  recentDate: { fontFamily: 'Inter_400Regular', fontSize: 11, marginTop: 1 },
   recentDeltas: { flexDirection: 'row', gap: 10, marginTop: 4 },
   recentDelta: { fontFamily: 'Inter_500Medium', fontSize: 11 },
   recentRight: { alignItems: 'flex-end', paddingRight: 4 },
