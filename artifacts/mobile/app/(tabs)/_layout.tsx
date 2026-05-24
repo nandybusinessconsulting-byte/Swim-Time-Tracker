@@ -16,6 +16,10 @@ function NativeTabLayout() {
         <Icon sf={{ default: 'plus.circle', selected: 'plus.circle.fill' }} />
         <Label>Track Cuts</Label>
       </NativeTabs.Trigger>
+      <NativeTabs.Trigger name="profile">
+        <Icon sf={{ default: 'person.circle', selected: 'person.circle.fill' }} />
+        <Label>Profile</Label>
+      </NativeTabs.Trigger>
       <NativeTabs.Trigger name="standards">
         <Icon sf={{ default: 'list.bullet.rectangle', selected: 'list.bullet.rectangle.fill' }} />
         <Label>Standards</Label>
@@ -70,6 +74,18 @@ function ClassicTabLayout() {
               <SymbolView name="plus.circle" tintColor={color} size={24} />
             ) : (
               <Feather name="plus-circle" size={22} color={color} />
+            ),
+        }}
+      />
+      <Tabs.Screen
+        name="profile"
+        options={{
+          title: 'Profile',
+          tabBarIcon: ({ color }) =>
+            isIOS ? (
+              <SymbolView name="person.circle" tintColor={color} size={24} />
+            ) : (
+              <Feather name="user" size={22} color={color} />
             ),
         }}
       />

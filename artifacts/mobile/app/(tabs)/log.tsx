@@ -94,6 +94,7 @@ export default function LogScreen() {
 
   const [selectedEventId, setSelectedEventId] = useState<string>('50free');
   const [timeInput, setTimeInput] = useState('');
+  const [meetName, setMeetName] = useState('');
   const [saving, setSaving] = useState(false);
 
   const parsedTime = parseTimeToHundredths(timeInput);
@@ -124,6 +125,7 @@ export default function LogScreen() {
       courseType: selectedCourseType,
       eventId: selectedEventId,
       timeHundredths: parsedTime,
+      meetName: meetName.trim(),
     });
     setTimeInput('');
     setSaving(false);
@@ -216,6 +218,22 @@ export default function LogScreen() {
                 </View>
               );
             })}
+          </View>
+        </View>
+
+        {/* Meet name */}
+        <View style={styles.section}>
+          <Text style={[styles.sectionLabel, { color: colors.mutedForeground }]}>MEET NAME  (optional)</Text>
+          <View style={[styles.meetCard, { backgroundColor: colors.card, borderColor: colors.border }]}>
+            <Feather name="flag" size={15} color={colors.mutedForeground} style={{ marginRight: 8 }} />
+            <TextInput
+              style={[styles.meetInput, { color: colors.foreground }]}
+              placeholder="e.g. NJ Sectionals"
+              placeholderTextColor={colors.mutedForeground}
+              value={meetName}
+              onChangeText={setMeetName}
+              returnKeyType="next"
+            />
           </View>
         </View>
 
@@ -360,6 +378,8 @@ const styles = StyleSheet.create({
   strokeChips: { flexDirection: 'row', flexWrap: 'wrap', gap: 6, flex: 1 },
   eventChip: { paddingHorizontal: 12, paddingVertical: 7, borderRadius: 16, borderWidth: 1 },
   eventChipText: { fontFamily: 'Inter_600SemiBold', fontSize: 13 },
+  meetCard: { borderRadius: 12, borderWidth: 1, paddingHorizontal: 14, paddingVertical: 12, flexDirection: 'row', alignItems: 'center' },
+  meetInput: { flex: 1, fontFamily: 'Inter_400Regular', fontSize: 15 },
   timeCard: { borderRadius: 14, borderWidth: 1.5, paddingHorizontal: 16, paddingVertical: 12, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
   timeInput: { fontFamily: 'Inter_700Bold', fontSize: 32, flex: 1 },
   parsedDisplay: { fontFamily: 'Inter_600SemiBold', fontSize: 13 },
