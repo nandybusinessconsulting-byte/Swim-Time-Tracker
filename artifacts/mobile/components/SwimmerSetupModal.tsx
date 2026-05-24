@@ -5,7 +5,6 @@ import {
   KeyboardAvoidingView,
   Modal,
   Platform,
-  ScrollView,
   StyleSheet,
   Text,
   TextInput,
@@ -14,16 +13,16 @@ import {
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import type { AgeGroup, Gender } from '@/constants/standards';
-import { AGE_GROUPS } from '@/constants/standards';
+import type { Gender } from '@/constants/standards';
 import { useSwim } from '@/context/SwimContext';
+import type { Swimmer } from '@/context/SwimContext';
 import { useColors } from '@/hooks/useColors';
 import { birthYearToAgeGroup } from '@/utils/timeUtils';
 
 interface SwimmerSetupModalProps {
   visible: boolean;
   onClose: () => void;
-  editSwimmer?: { id: string; name: string; gender: Gender; birthYear: number; ageGroup: AgeGroup } | null;
+  editSwimmer?: Swimmer | null;
 }
 
 export function SwimmerSetupModal({ visible, onClose, editSwimmer }: SwimmerSetupModalProps) {
@@ -31,26 +30,22 @@ export function SwimmerSetupModal({ visible, onClose, editSwimmer }: SwimmerSetu
   const insets = useSafeAreaInsets();
   const { addSwimmer, updateSwimmer } = useSwim();
 
-  const [name, setName] = useState(editSwimmer?.name ?? '');
-  const [gender, setGender] = useState<Gender>(editSwimmer?.gender ?? 'F');
+  const [name, setName]       = useState(editSwimmer?.name ?? '');
+  const [gender, setGender]   = useState<Gender>(editSwimmer?.gender ?? 'F');
   const [birthYear, setBirthYear] = useState(editSwimmer?.birthYear?.toString() ?? '');
-  const [useAgeGroup, setUseAgeGroup] = useState(false);
-  const [ageGroup, setAgeGroup] = useState<AgeGroup>(editSwimmer?.ageGroup ?? '11-12');
 
   const currentYear = new Date().getFullYear();
-  const computedAgeGroup = birthYear && !useAgeGroup
-    ? (birthYearToAgeGroup(parseInt(birthYear, 10)) as AgeGroup)
-    : ageGroup;
+  const yearNum = parseInt(birthYear, 10);
+  const ageGroup = birthYear.length === 4 && !isNaN(yearNum) ? birthYearToAgeGroup(yearNum) : null;
 
   async function handleSave() {
     if (!name.trim()) return;
-    const yr = parseInt(birthYear, 10);
-    const ag = useAgeGroup ? ageGroup : (birthYear ? (birthYearToAgeGroup(yr) as AgeGroup) : ageGroup);
     await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    const yr = yearNum || currentYear - 12;
     if (editSwimmer) {
-      await updateSwimmer({ id: editSwimmer.id, name: name.trim(), gender, birthYear: yr || currentYear - 12, ageGroup: ag });
+      await updateSwimmer({ id: editSwimmer.id, name: name.trim(), gender, birthYear: yr });
     } else {
-      await addSwimmer({ name: name.trim(), gender, birthYear: yr || currentYear - 12, ageGroup: ag });
+      await addSwimmer({ name: name.trim(), gender, birthYear: yr });
     }
     onClose();
   }
@@ -73,7 +68,7 @@ export function SwimmerSetupModal({ visible, onClose, editSwimmer }: SwimmerSetu
           </TouchableOpacity>
         </View>
 
-        <ScrollView style={styles.body} keyboardShouldPersistTaps="handled">
+        <View style={styles.body}>
           <View style={styles.section}>
             <Text style={[styles.label, { color: colors.mutedForeground }]}>NAME</Text>
             <TextInput
@@ -89,17 +84,14 @@ export function SwimmerSetupModal({ visible, onClose, editSwimmer }: SwimmerSetu
 
           <View style={styles.section}>
             <Text style={[styles.label, { color: colors.mutedForeground }]}>GENDER</Text>
-            <View style={styles.segmentRow}>
+            <View style={styles.segRow}>
               {(['F', 'M'] as Gender[]).map(g => (
                 <TouchableOpacity
                   key={g}
-                  style={[
-                    styles.segmentBtn,
-                    { borderColor: colors.border, backgroundColor: gender === g ? colors.primary : colors.card },
-                  ]}
+                  style={[styles.segBtn, { borderColor: colors.border, backgroundColor: gender === g ? colors.primary : colors.card }]}
                   onPress={() => setGender(g)}
                 >
-                  <Text style={[styles.segmentText, { color: gender === g ? colors.primaryForeground : colors.foreground }]}>
+                  <Text style={[styles.segText, { color: gender === g ? colors.primaryForeground : colors.foreground }]}>
                     {g === 'F' ? 'Girls' : 'Boys'}
                   </Text>
                 </TouchableOpacity>
@@ -118,37 +110,16 @@ export function SwimmerSetupModal({ visible, onClose, editSwimmer }: SwimmerSetu
               keyboardType="number-pad"
               maxLength={4}
             />
-            {birthYear.length === 4 && (
-              <Text style={[styles.hint, { color: colors.mutedForeground }]}>
-                Age group: {computedAgeGroup}
-              </Text>
+            {ageGroup && (
+              <View style={[styles.agePill, { backgroundColor: colors.secondary, borderColor: colors.border }]}>
+                <Text style={[styles.ageText, { color: colors.mutedForeground }]}>
+                  Age group: <Text style={[styles.ageValue, { color: colors.primary }]}>{ageGroup}</Text>
+                  {'  ·  '}LCM 2026 standards applied
+                </Text>
+              </View>
             )}
           </View>
-
-          {(!birthYear || useAgeGroup) && (
-            <View style={styles.section}>
-              <Text style={[styles.label, { color: colors.mutedForeground }]}>AGE GROUP</Text>
-              <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-                <View style={styles.chipRow}>
-                  {AGE_GROUPS.map(ag => (
-                    <TouchableOpacity
-                      key={ag}
-                      style={[
-                        styles.chip,
-                        { borderColor: colors.border, backgroundColor: ageGroup === ag ? colors.primary : colors.card },
-                      ]}
-                      onPress={() => setAgeGroup(ag)}
-                    >
-                      <Text style={[styles.chipText, { color: ageGroup === ag ? colors.primaryForeground : colors.foreground }]}>
-                        {ag}
-                      </Text>
-                    </TouchableOpacity>
-                  ))}
-                </View>
-              </ScrollView>
-            </View>
-          )}
-        </ScrollView>
+        </View>
       </KeyboardAvoidingView>
     </Modal>
   );
@@ -157,12 +128,8 @@ export function SwimmerSetupModal({ visible, onClose, editSwimmer }: SwimmerSetu
 const styles = StyleSheet.create({
   container: { flex: 1 },
   header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: 20,
-    paddingBottom: 16,
-    borderBottomWidth: StyleSheet.hairlineWidth,
+    flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
+    paddingHorizontal: 20, paddingBottom: 16, borderBottomWidth: StyleSheet.hairlineWidth,
   },
   headerTitle: { fontFamily: 'Inter_600SemiBold', fontSize: 17 },
   closeBtn: { padding: 4 },
@@ -171,31 +138,11 @@ const styles = StyleSheet.create({
   body: { flex: 1, padding: 20 },
   section: { marginBottom: 24 },
   label: { fontFamily: 'Inter_600SemiBold', fontSize: 11, letterSpacing: 0.8, marginBottom: 8 },
-  input: {
-    height: 48,
-    borderRadius: 10,
-    borderWidth: 1,
-    paddingHorizontal: 14,
-    fontFamily: 'Inter_400Regular',
-    fontSize: 16,
-  },
-  hint: { fontFamily: 'Inter_400Regular', fontSize: 12, marginTop: 6 },
-  segmentRow: { flexDirection: 'row', gap: 10 },
-  segmentBtn: {
-    flex: 1,
-    height: 44,
-    borderRadius: 10,
-    borderWidth: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  segmentText: { fontFamily: 'Inter_600SemiBold', fontSize: 15 },
-  chipRow: { flexDirection: 'row', gap: 8, paddingVertical: 2 },
-  chip: {
-    paddingHorizontal: 16,
-    paddingVertical: 10,
-    borderRadius: 20,
-    borderWidth: 1,
-  },
-  chipText: { fontFamily: 'Inter_500Medium', fontSize: 14 },
+  input: { height: 48, borderRadius: 10, borderWidth: 1, paddingHorizontal: 14, fontFamily: 'Inter_400Regular', fontSize: 16 },
+  segRow: { flexDirection: 'row', gap: 10 },
+  segBtn: { flex: 1, height: 44, borderRadius: 10, borderWidth: 1, alignItems: 'center', justifyContent: 'center' },
+  segText: { fontFamily: 'Inter_600SemiBold', fontSize: 15 },
+  agePill: { marginTop: 10, paddingHorizontal: 12, paddingVertical: 8, borderRadius: 8, borderWidth: 1 },
+  ageText: { fontFamily: 'Inter_400Regular', fontSize: 13 },
+  ageValue: { fontFamily: 'Inter_600SemiBold' },
 });

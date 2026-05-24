@@ -13,7 +13,6 @@ import {
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import type { CourseType } from '@/constants/standards';
 import { useSwim } from '@/context/SwimContext';
 import type { Meet } from '@/context/SwimContext';
 import { useColors } from '@/hooks/useColors';
@@ -31,7 +30,6 @@ export function AddMeetSheet({ visible, onClose, onCreated }: AddMeetSheetProps)
 
   const [name, setName] = useState('');
   const [location, setLocation] = useState('');
-  const [courseType, setCourseType] = useState<CourseType>('SCY');
 
   async function handleCreate() {
     if (!name.trim()) return;
@@ -39,7 +37,6 @@ export function AddMeetSheet({ visible, onClose, onCreated }: AddMeetSheetProps)
     const meet = await addMeet({
       name: name.trim(),
       location: location.trim(),
-      courseType,
       date: new Date().toISOString(),
     });
     setName('');
@@ -85,24 +82,6 @@ export function AddMeetSheet({ visible, onClose, onCreated }: AddMeetSheetProps)
             onChangeText={setLocation}
             returnKeyType="done"
           />
-
-          <Text style={[styles.label, { color: colors.mutedForeground, marginTop: 20 }]}>COURSE</Text>
-          <View style={styles.courseRow}>
-            {(['SCY', 'SCM', 'LCM'] as CourseType[]).map(ct => (
-              <TouchableOpacity
-                key={ct}
-                style={[
-                  styles.courseBtn,
-                  { borderColor: colors.border, backgroundColor: courseType === ct ? colors.primary : colors.card },
-                ]}
-                onPress={() => setCourseType(ct)}
-              >
-                <Text style={[styles.courseBtnText, { color: courseType === ct ? colors.primaryForeground : colors.foreground }]}>
-                  {ct}
-                </Text>
-              </TouchableOpacity>
-            ))}
-          </View>
         </View>
       </KeyboardAvoidingView>
     </Modal>
@@ -112,12 +91,8 @@ export function AddMeetSheet({ visible, onClose, onCreated }: AddMeetSheetProps)
 const styles = StyleSheet.create({
   container: { flex: 1 },
   header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: 20,
-    paddingBottom: 16,
-    borderBottomWidth: StyleSheet.hairlineWidth,
+    flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
+    paddingHorizontal: 20, paddingBottom: 16, borderBottomWidth: StyleSheet.hairlineWidth,
   },
   title: { fontFamily: 'Inter_600SemiBold', fontSize: 17 },
   createBtn: { paddingHorizontal: 16, paddingVertical: 8, borderRadius: 8 },
@@ -125,21 +100,7 @@ const styles = StyleSheet.create({
   body: { padding: 20 },
   label: { fontFamily: 'Inter_600SemiBold', fontSize: 11, letterSpacing: 0.8, marginBottom: 8 },
   input: {
-    height: 48,
-    borderRadius: 10,
-    borderWidth: 1,
-    paddingHorizontal: 14,
-    fontFamily: 'Inter_400Regular',
-    fontSize: 16,
+    height: 48, borderRadius: 10, borderWidth: 1, paddingHorizontal: 14,
+    fontFamily: 'Inter_400Regular', fontSize: 16,
   },
-  courseRow: { flexDirection: 'row', gap: 10 },
-  courseBtn: {
-    flex: 1,
-    height: 44,
-    borderRadius: 10,
-    borderWidth: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  courseBtnText: { fontFamily: 'Inter_600SemiBold', fontSize: 14 },
 });

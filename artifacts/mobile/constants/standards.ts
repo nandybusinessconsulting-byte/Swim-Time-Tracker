@@ -1,112 +1,13 @@
-export type StandardLevel = 'B' | 'BB' | 'A' | 'AA' | 'AAA' | 'AAAA' | 'Silver' | 'Gold' | 'EZ';
 export type Gender = 'M' | 'F';
-export type CourseType = 'SCY' | 'SCM' | 'LCM';
-export type AgeGroup = '8U' | '9-10' | '11-12' | '13-14' | '15-16' | '17-18';
+export type AgeGroup = '10&U' | '11-12' | '13-14' | '15-18';
+export type CourseType = 'LCM';
 
-export const AGE_GROUPS: AgeGroup[] = ['8U', '9-10', '11-12', '13-14', '15-16', '17-18'];
+export const AGE_GROUPS: AgeGroup[] = ['10&U', '11-12', '13-14', '15-18'];
 
-export interface LevelDef {
-  level: StandardLevel;
-  label: string;
-  description: string;
-}
-
-export interface StandardSet {
-  id: string;
-  name: string;
-  shortName: string;
-  org: string;
-  season: string;
-  courseType: CourseType;
-  levels: LevelDef[];
-}
-
-const USA_SWIM_LEVELS: LevelDef[] = [
-  { level: 'B',    label: 'B',    description: 'Entry level' },
-  { level: 'BB',   label: 'BB',   description: 'Intermediate' },
-  { level: 'A',    label: 'A',    description: 'Junior Olympics' },
-  { level: 'AA',   label: 'AA',   description: 'State / Senior' },
-  { level: 'AAA',  label: 'AAA',  description: 'Sectional' },
-  { level: 'AAAA', label: 'AAAA', description: 'National' },
-];
-
-export const STANDARD_SETS: StandardSet[] = [
-  {
-    id: 'usswim-2526-scy',
-    name: 'USA Swimming 2025-26 SCY',
-    shortName: 'USA 25-26 SCY',
-    org: 'USA Swimming',
-    season: '2025-2026',
-    courseType: 'SCY',
-    levels: USA_SWIM_LEVELS,
-  },
-  {
-    id: 'usswim-2526-lcm',
-    name: 'USA Swimming 2025-26 LCM',
-    shortName: 'USA 25-26 LCM',
-    org: 'USA Swimming',
-    season: '2025-2026',
-    courseType: 'LCM',
-    levels: USA_SWIM_LEVELS,
-  },
-  {
-    id: 'usswim-2425-scy',
-    name: 'USA Swimming 2024-25 SCY',
-    shortName: 'USA 24-25 SCY',
-    org: 'USA Swimming',
-    season: '2024-2025',
-    courseType: 'SCY',
-    levels: USA_SWIM_LEVELS,
-  },
-  {
-    id: 'usswim-2425-lcm',
-    name: 'USA Swimming 2024-25 LCM',
-    shortName: 'USA 24-25 LCM',
-    org: 'USA Swimming',
-    season: '2024-2025',
-    courseType: 'LCM',
-    levels: USA_SWIM_LEVELS,
-  },
-  {
-    id: 'nj-state-scy',
-    name: 'NJ State SCY',
-    shortName: 'NJ State',
-    org: 'NJ LSC',
-    season: '2025-2026',
-    courseType: 'SCY',
-    levels: [
-      { level: 'Silver', label: 'Silver', description: 'NJ JO Silver qualifying' },
-      { level: 'Gold',   label: 'Gold',   description: 'NJ JO Gold qualifying' },
-    ],
-  },
-  {
-    id: 'eastern-zone-scy',
-    name: 'Eastern Zone SCY',
-    shortName: 'East Zone',
-    org: 'Eastern Zone',
-    season: '2025-2026',
-    courseType: 'SCY',
-    levels: [
-      { level: 'EZ', label: 'EZ', description: 'Eastern Zone Championship qualifying' },
-    ],
-  },
-];
-
-export const DEFAULT_STANDARD_SET_ID = 'usswim-2526-scy';
-export const DEFAULT_STANDARD_LEVEL: StandardLevel = 'BB';
-
-// ─── Legacy alias ─────────────────────────────────────────────────────────────
-export const STANDARD_LEVELS = USA_SWIM_LEVELS;
-
-export interface StandardEntry {
-  setId: string;
-  ageGroup: AgeGroup;
-  gender: Gender;
-  courseType: CourseType;
-  eventId: string;
-  level: StandardLevel;
-  timeHundredths: number;
-  season: string;
+export interface StandardTimes {
+  silver: number | null;
+  gold: number | null;
+  zone: number | null;
 }
 
 // ─── Helper ───────────────────────────────────────────────────────────────────
@@ -121,576 +22,324 @@ function t(str: string): number {
   return parseInt(secStr, 10) * 100 + parseInt(centStr.padEnd(2, '0'), 10);
 }
 
-type RawRow = { setId: string; ag: AgeGroup; g: Gender; ev: string; times: number[] };
+// ─── Data structure ───────────────────────────────────────────────────────────
+// STANDARDS_2026[eventId][ageGroup][gender] = { silver, gold, zone }
+// Source: 2026 NJ LSC LCM Silver/Gold cuts + EZ LCM AG Zone 2026 qualifying times
+// Zone data covers 10&U, 11-12, 13-14 only (15-18 LCM Zone not published in provided document)
 
-// ─────────────────────────────────────────────────────────────────────────────
-// USA SWIMMING SCY 2024-25 (levels: B BB A AA AAA AAAA)
-// ─────────────────────────────────────────────────────────────────────────────
-const SCY_2425: RawRow[] = [
-  // ── Girls 9-10 ───────────────────────────────────────────────────────────────
-  { setId:'usswim-2425-scy', ag:'9-10',  g:'F', ev:'50free',    times:[t('43.99'),t('40.19'),t('36.29'),t('33.89'),t('31.79'),t('30.09')] },
-  { setId:'usswim-2425-scy', ag:'9-10',  g:'F', ev:'100free',   times:[t('1:33.99'),t('1:25.49'),t('1:17.09'),t('1:11.99'),t('1:07.49'),t('1:03.79')] },
-  { setId:'usswim-2425-scy', ag:'9-10',  g:'F', ev:'200free',   times:[t('3:21.99'),t('3:04.29'),t('2:46.79'),t('2:35.89'),t('2:26.19'),t('2:17.99')] },
-  { setId:'usswim-2425-scy', ag:'9-10',  g:'F', ev:'100back',   times:[t('1:44.09'),t('1:35.09'),t('1:26.09'),t('1:20.49'),t('1:15.59'),t('1:11.39')] },
-  { setId:'usswim-2425-scy', ag:'9-10',  g:'F', ev:'100breast', times:[t('1:50.29'),t('1:40.59'),t('1:30.99'),t('1:24.99'),t('1:19.69'),t('1:15.19')] },
-  { setId:'usswim-2425-scy', ag:'9-10',  g:'F', ev:'100fly',    times:[t('1:44.09'),t('1:35.09'),t('1:25.99'),t('1:20.29'),t('1:15.29'),t('1:11.09')] },
-  { setId:'usswim-2425-scy', ag:'9-10',  g:'F', ev:'200im',     times:[t('3:29.99'),t('3:11.69'),t('2:53.09'),t('2:42.99'),t('2:33.39'),t('2:25.09')] },
-  // ── Boys 9-10 ────────────────────────────────────────────────────────────────
-  { setId:'usswim-2425-scy', ag:'9-10',  g:'M', ev:'50free',    times:[t('43.99'),t('40.19'),t('36.29'),t('33.89'),t('31.79'),t('30.09')] },
-  { setId:'usswim-2425-scy', ag:'9-10',  g:'M', ev:'100free',   times:[t('1:33.99'),t('1:25.49'),t('1:17.09'),t('1:11.99'),t('1:07.49'),t('1:03.79')] },
-  { setId:'usswim-2425-scy', ag:'9-10',  g:'M', ev:'200free',   times:[t('3:21.99'),t('3:04.29'),t('2:46.79'),t('2:35.89'),t('2:26.19'),t('2:17.99')] },
-  { setId:'usswim-2425-scy', ag:'9-10',  g:'M', ev:'100back',   times:[t('1:44.09'),t('1:35.09'),t('1:26.09'),t('1:20.49'),t('1:15.59'),t('1:11.39')] },
-  { setId:'usswim-2425-scy', ag:'9-10',  g:'M', ev:'100breast', times:[t('1:50.29'),t('1:40.59'),t('1:30.99'),t('1:24.99'),t('1:19.69'),t('1:15.19')] },
-  { setId:'usswim-2425-scy', ag:'9-10',  g:'M', ev:'100fly',    times:[t('1:44.09'),t('1:35.09'),t('1:25.99'),t('1:20.29'),t('1:15.29'),t('1:11.09')] },
-  { setId:'usswim-2425-scy', ag:'9-10',  g:'M', ev:'200im',     times:[t('3:29.99'),t('3:11.69'),t('2:53.09'),t('2:42.99'),t('2:33.39'),t('2:25.09')] },
-  // ── Girls 11-12 ──────────────────────────────────────────────────────────────
-  { setId:'usswim-2425-scy', ag:'11-12', g:'F', ev:'50free',    times:[t('37.99'),t('34.69'),t('31.39'),t('29.29'),t('27.29'),t('25.89')] },
-  { setId:'usswim-2425-scy', ag:'11-12', g:'F', ev:'100free',   times:[t('1:21.29'),t('1:14.19'),t('1:07.29'),t('1:03.09'),t('59.29'),t('55.89')] },
-  { setId:'usswim-2425-scy', ag:'11-12', g:'F', ev:'200free',   times:[t('2:56.59'),t('2:40.79'),t('2:25.49'),t('2:17.09'),t('2:09.09'),t('2:01.59')] },
-  { setId:'usswim-2425-scy', ag:'11-12', g:'F', ev:'500free',   times:[t('7:59.99'),t('7:17.99'),t('6:35.99'),t('6:10.99'),t('5:48.99'),t('5:28.99')] },
-  { setId:'usswim-2425-scy', ag:'11-12', g:'F', ev:'1000free',  times:[t('16:59.99'),t('15:29.99'),t('13:59.99'),t('13:04.99'),t('12:19.99'),t('11:39.99')] },
-  { setId:'usswim-2425-scy', ag:'11-12', g:'F', ev:'1650free',  times:[t('28:29.99'),t('25:59.99'),t('23:29.99'),t('21:59.99'),t('20:39.99'),t('19:29.99')] },
-  { setId:'usswim-2425-scy', ag:'11-12', g:'F', ev:'100back',   times:[t('1:30.59'),t('1:22.49'),t('1:14.69'),t('1:09.79'),t('1:05.49'),t('1:01.89')] },
-  { setId:'usswim-2425-scy', ag:'11-12', g:'F', ev:'200back',   times:[t('3:14.99'),t('2:57.49'),t('2:40.49'),t('2:29.99'),t('2:20.99'),t('2:12.99')] },
-  { setId:'usswim-2425-scy', ag:'11-12', g:'F', ev:'100breast', times:[t('1:35.29'),t('1:26.79'),t('1:18.49'),t('1:12.79'),t('1:08.49'),t('1:04.89')] },
-  { setId:'usswim-2425-scy', ag:'11-12', g:'F', ev:'200breast', times:[t('3:24.99'),t('3:06.99'),t('2:48.99'),t('2:36.99'),t('2:27.99'),t('2:19.99')] },
-  { setId:'usswim-2425-scy', ag:'11-12', g:'F', ev:'100fly',    times:[t('1:30.59'),t('1:22.49'),t('1:14.49'),t('1:09.19'),t('1:04.79'),t('1:01.29')] },
-  { setId:'usswim-2425-scy', ag:'11-12', g:'F', ev:'200fly',    times:[t('3:19.99'),t('3:02.99'),t('2:45.99'),t('2:35.99'),t('2:26.99'),t('2:18.99')] },
-  { setId:'usswim-2425-scy', ag:'11-12', g:'F', ev:'200im',     times:[t('3:02.99'),t('2:46.49'),t('2:30.49'),t('2:20.49'),t('2:11.49'),t('2:03.99')] },
-  { setId:'usswim-2425-scy', ag:'11-12', g:'F', ev:'400im',     times:[t('6:24.99'),t('5:50.99'),t('5:17.49'),t('4:56.49'),t('4:37.99'),t('4:21.49')] },
-  // ── Boys 11-12 ───────────────────────────────────────────────────────────────
-  { setId:'usswim-2425-scy', ag:'11-12', g:'M', ev:'50free',    times:[t('37.99'),t('34.69'),t('31.39'),t('29.29'),t('27.29'),t('25.89')] },
-  { setId:'usswim-2425-scy', ag:'11-12', g:'M', ev:'100free',   times:[t('1:22.99'),t('1:15.69'),t('1:08.39'),t('1:03.79'),t('59.99'),t('56.59')] },
-  { setId:'usswim-2425-scy', ag:'11-12', g:'M', ev:'200free',   times:[t('3:01.99'),t('2:45.69'),t('2:29.79'),t('2:21.09'),t('2:12.99'),t('2:05.09')] },
-  { setId:'usswim-2425-scy', ag:'11-12', g:'M', ev:'500free',   times:[t('8:12.99'),t('7:29.99'),t('6:46.99'),t('6:21.09'),t('5:58.19'),t('5:37.29')] },
-  { setId:'usswim-2425-scy', ag:'11-12', g:'M', ev:'1000free',  times:[t('17:29.99'),t('15:59.99'),t('14:29.99'),t('13:34.99'),t('12:44.99'),t('12:04.99')] },
-  { setId:'usswim-2425-scy', ag:'11-12', g:'M', ev:'1650free',  times:[t('29:09.99'),t('26:39.99'),t('24:09.99'),t('22:39.99'),t('21:14.99'),t('20:04.99')] },
-  { setId:'usswim-2425-scy', ag:'11-12', g:'M', ev:'100back',   times:[t('1:32.99'),t('1:24.99'),t('1:16.99'),t('1:12.09'),t('1:07.69'),t('1:04.09')] },
-  { setId:'usswim-2425-scy', ag:'11-12', g:'M', ev:'200back',   times:[t('3:19.99'),t('3:01.99'),t('2:44.49'),t('2:33.99'),t('2:24.99'),t('2:16.99')] },
-  { setId:'usswim-2425-scy', ag:'11-12', g:'M', ev:'100breast', times:[t('1:37.79'),t('1:28.99'),t('1:20.79'),t('1:15.19'),t('1:10.69'),t('1:06.69')] },
-  { setId:'usswim-2425-scy', ag:'11-12', g:'M', ev:'200breast', times:[t('3:29.99'),t('3:11.99'),t('2:53.99'),t('2:41.99'),t('2:32.99'),t('2:23.99')] },
-  { setId:'usswim-2425-scy', ag:'11-12', g:'M', ev:'100fly',    times:[t('1:32.99'),t('1:24.99'),t('1:16.99'),t('1:11.59'),t('1:07.29'),t('1:03.59')] },
-  { setId:'usswim-2425-scy', ag:'11-12', g:'M', ev:'200fly',    times:[t('3:24.99'),t('3:06.99'),t('2:49.99'),t('2:38.99'),t('2:28.99'),t('2:19.99')] },
-  { setId:'usswim-2425-scy', ag:'11-12', g:'M', ev:'200im',     times:[t('3:07.99'),t('2:51.49'),t('2:34.99'),t('2:24.99'),t('2:15.99'),t('2:08.49')] },
-  { setId:'usswim-2425-scy', ag:'11-12', g:'M', ev:'400im',     times:[t('6:34.99'),t('5:59.99'),t('5:25.99'),t('5:04.99'),t('4:46.99'),t('4:30.49')] },
-  // ── Girls 13-14 ──────────────────────────────────────────────────────────────
-  { setId:'usswim-2425-scy', ag:'13-14', g:'F', ev:'50free',    times:[t('32.99'),t('30.09'),t('27.29'),t('25.49'),t('23.89'),t('22.59')] },
-  { setId:'usswim-2425-scy', ag:'13-14', g:'F', ev:'100free',   times:[t('1:10.99'),t('1:04.79'),t('58.59'),t('54.69'),t('51.29'),t('48.39')] },
-  { setId:'usswim-2425-scy', ag:'13-14', g:'F', ev:'200free',   times:[t('2:32.99'),t('2:19.39'),t('2:06.09'),t('1:57.69'),t('1:50.39'),t('1:43.99')] },
-  { setId:'usswim-2425-scy', ag:'13-14', g:'F', ev:'500free',   times:[t('6:54.99'),t('6:18.99'),t('5:42.99'),t('5:20.99'),t('5:01.99'),t('4:44.99')] },
-  { setId:'usswim-2425-scy', ag:'13-14', g:'F', ev:'1000free',  times:[t('14:29.99'),t('13:13.99'),t('11:59.99'),t('11:11.99'),t('10:31.99'),t('9:55.99')] },
-  { setId:'usswim-2425-scy', ag:'13-14', g:'F', ev:'1650free',  times:[t('24:09.99'),t('22:02.99'),t('19:59.99'),t('18:41.99'),t('17:33.99'),t('16:33.99')] },
-  { setId:'usswim-2425-scy', ag:'13-14', g:'F', ev:'100back',   times:[t('1:18.99'),t('1:11.89'),t('1:04.99'),t('1:00.69'),t('56.99'),t('53.79')] },
-  { setId:'usswim-2425-scy', ag:'13-14', g:'F', ev:'200back',   times:[t('2:49.99'),t('2:34.99'),t('2:20.09'),t('2:10.89'),t('2:02.89'),t('1:55.79')] },
-  { setId:'usswim-2425-scy', ag:'13-14', g:'F', ev:'100breast', times:[t('1:23.29'),t('1:15.99'),t('1:08.79'),t('1:03.89'),t('59.89'),t('56.49')] },
-  { setId:'usswim-2425-scy', ag:'13-14', g:'F', ev:'200breast', times:[t('2:59.99'),t('2:44.29'),t('2:28.59'),t('2:17.69'),t('2:08.79'),t('2:00.99')] },
-  { setId:'usswim-2425-scy', ag:'13-14', g:'F', ev:'100fly',    times:[t('1:18.99'),t('1:12.09'),t('1:04.99'),t('1:00.49'),t('56.69'),t('53.49')] },
-  { setId:'usswim-2425-scy', ag:'13-14', g:'F', ev:'200fly',    times:[t('2:54.99'),t('2:39.99'),t('2:24.99'),t('2:14.99'),t('2:06.99'),t('1:59.99')] },
-  { setId:'usswim-2425-scy', ag:'13-14', g:'F', ev:'200im',     times:[t('2:39.99'),t('2:25.99'),t('2:11.99'),t('2:02.99'),t('1:55.39'),t('1:48.79')] },
-  { setId:'usswim-2425-scy', ag:'13-14', g:'F', ev:'400im',     times:[t('5:34.99'),t('5:05.99'),t('4:36.99'),t('4:18.99'),t('4:02.99'),t('3:48.99')] },
-  // ── Boys 13-14 ───────────────────────────────────────────────────────────────
-  { setId:'usswim-2425-scy', ag:'13-14', g:'M', ev:'50free',    times:[t('30.99'),t('28.29'),t('25.69'),t('23.99'),t('22.49'),t('21.29')] },
-  { setId:'usswim-2425-scy', ag:'13-14', g:'M', ev:'100free',   times:[t('1:06.99'),t('1:01.09'),t('55.29'),t('51.59'),t('48.39'),t('45.59')] },
-  { setId:'usswim-2425-scy', ag:'13-14', g:'M', ev:'200free',   times:[t('2:24.99'),t('2:12.19'),t('1:59.79'),t('1:51.79'),t('1:44.99'),t('1:38.99')] },
-  { setId:'usswim-2425-scy', ag:'13-14', g:'M', ev:'500free',   times:[t('6:32.99'),t('5:58.99'),t('5:24.99'),t('5:03.99'),t('4:45.99'),t('4:29.99')] },
-  { setId:'usswim-2425-scy', ag:'13-14', g:'M', ev:'1000free',  times:[t('13:44.99'),t('12:33.99'),t('11:22.99'),t('10:37.99'),t('9:59.99'),t('9:25.99')] },
-  { setId:'usswim-2425-scy', ag:'13-14', g:'M', ev:'1650free',  times:[t('22:54.99'),t('20:54.99'),t('18:59.99'),t('17:44.99'),t('16:41.99'),t('15:44.99')] },
-  { setId:'usswim-2425-scy', ag:'13-14', g:'M', ev:'100back',   times:[t('1:14.99'),t('1:08.29'),t('1:01.79'),t('57.69'),t('54.09'),t('51.09')] },
-  { setId:'usswim-2425-scy', ag:'13-14', g:'M', ev:'200back',   times:[t('2:40.99'),t('2:26.79'),t('2:12.79'),t('2:03.99'),t('1:56.29'),t('1:49.79')] },
-  { setId:'usswim-2425-scy', ag:'13-14', g:'M', ev:'100breast', times:[t('1:19.99'),t('1:12.79'),t('1:05.89'),t('1:01.09'),t('57.29'),t('54.09')] },
-  { setId:'usswim-2425-scy', ag:'13-14', g:'M', ev:'200breast', times:[t('2:51.99'),t('2:36.99'),t('2:21.79'),t('2:11.49'),t('2:03.29'),t('1:56.09')] },
-  { setId:'usswim-2425-scy', ag:'13-14', g:'M', ev:'100fly',    times:[t('1:14.99'),t('1:08.29'),t('1:01.79'),t('57.49'),t('53.99'),t('50.99')] },
-  { setId:'usswim-2425-scy', ag:'13-14', g:'M', ev:'200fly',    times:[t('2:46.99'),t('2:32.49'),t('2:18.99'),t('2:09.99'),t('2:02.99'),t('1:56.99')] },
-  { setId:'usswim-2425-scy', ag:'13-14', g:'M', ev:'200im',     times:[t('2:29.99'),t('2:16.99'),t('2:03.69'),t('1:55.29'),t('1:48.29'),t('1:42.09')] },
-  { setId:'usswim-2425-scy', ag:'13-14', g:'M', ev:'400im',     times:[t('5:14.99'),t('4:47.99'),t('4:20.79'),t('4:03.49'),t('3:48.49'),t('3:35.19')] },
-  // ── Girls 15-16 ──────────────────────────────────────────────────────────────
-  { setId:'usswim-2425-scy', ag:'15-16', g:'F', ev:'50free',    times:[t('29.99'),t('27.49'),t('24.89'),t('23.29'),t('21.79'),t('20.69')] },
-  { setId:'usswim-2425-scy', ag:'15-16', g:'F', ev:'100free',   times:[t('1:04.99'),t('59.29'),t('53.79'),t('50.09'),t('46.99'),t('44.29')] },
-  { setId:'usswim-2425-scy', ag:'15-16', g:'F', ev:'200free',   times:[t('2:20.99'),t('2:08.79'),t('1:56.29'),t('1:48.79'),t('1:42.09'),t('1:36.09')] },
-  { setId:'usswim-2425-scy', ag:'15-16', g:'F', ev:'500free',   times:[t('6:21.99'),t('5:48.99'),t('5:15.99'),t('4:54.99'),t('4:36.99'),t('4:20.99')] },
-  { setId:'usswim-2425-scy', ag:'15-16', g:'F', ev:'1000free',  times:[t('13:29.99'),t('12:19.99'),t('11:09.99'),t('10:25.99'),t('9:47.99'),t('9:14.99')] },
-  { setId:'usswim-2425-scy', ag:'15-16', g:'F', ev:'1650free',  times:[t('22:29.99'),t('20:34.99'),t('18:39.99'),t('17:26.99'),t('16:23.99'),t('15:29.99')] },
-  { setId:'usswim-2425-scy', ag:'15-16', g:'F', ev:'100back',   times:[t('1:13.09'),t('1:06.59'),t('1:00.09'),t('56.19'),t('52.79'),t('49.79')] },
-  { setId:'usswim-2425-scy', ag:'15-16', g:'F', ev:'200back',   times:[t('2:36.99'),t('2:23.29'),t('2:09.49'),t('2:00.89'),t('1:53.39'),t('1:46.79')] },
-  { setId:'usswim-2425-scy', ag:'15-16', g:'F', ev:'100breast', times:[t('1:16.99'),t('1:10.19'),t('1:03.39'),t('58.79'),t('55.19'),t('52.09')] },
-  { setId:'usswim-2425-scy', ag:'15-16', g:'F', ev:'200breast', times:[t('2:45.99'),t('2:31.79'),t('2:17.29'),t('2:07.39'),t('1:59.39'),t('1:52.39')] },
-  { setId:'usswim-2425-scy', ag:'15-16', g:'F', ev:'100fly',    times:[t('1:13.09'),t('1:06.59'),t('1:00.09'),t('55.99'),t('52.49'),t('49.39')] },
-  { setId:'usswim-2425-scy', ag:'15-16', g:'F', ev:'200fly',    times:[t('2:41.99'),t('2:27.99'),t('2:13.99'),t('2:04.99'),t('1:57.99'),t('1:51.99')] },
-  { setId:'usswim-2425-scy', ag:'15-16', g:'F', ev:'200im',     times:[t('2:27.99'),t('2:15.09'),t('2:02.29'),t('1:53.89'),t('1:46.99'),t('1:40.79')] },
-  { setId:'usswim-2425-scy', ag:'15-16', g:'F', ev:'400im',     times:[t('5:10.99'),t('4:43.99'),t('4:16.99'),t('3:59.99'),t('3:45.39'),t('3:31.99')] },
-  // ── Boys 15-16 ───────────────────────────────────────────────────────────────
-  { setId:'usswim-2425-scy', ag:'15-16', g:'M', ev:'50free',    times:[t('26.99'),t('24.69'),t('22.39'),t('20.89'),t('19.69'),t('18.69')] },
-  { setId:'usswim-2425-scy', ag:'15-16', g:'M', ev:'100free',   times:[t('58.49'),t('53.29'),t('48.29'),t('45.09'),t('42.29'),t('39.99')] },
-  { setId:'usswim-2425-scy', ag:'15-16', g:'M', ev:'200free',   times:[t('2:06.99'),t('1:55.99'),t('1:44.69'),t('1:37.79'),t('1:31.79'),t('1:26.49')] },
-  { setId:'usswim-2425-scy', ag:'15-16', g:'M', ev:'500free',   times:[t('5:54.99'),t('5:23.99'),t('4:53.99'),t('4:34.99'),t('4:18.99'),t('4:03.99')] },
-  { setId:'usswim-2425-scy', ag:'15-16', g:'M', ev:'1000free',  times:[t('12:29.99'),t('11:24.99'),t('10:19.99'),t('9:39.99'),t('9:04.99'),t('8:33.99')] },
-  { setId:'usswim-2425-scy', ag:'15-16', g:'M', ev:'1650free',  times:[t('20:49.99'),t('19:02.99'),t('17:14.99'),t('16:07.99'),t('15:09.99'),t('14:18.99')] },
-  { setId:'usswim-2425-scy', ag:'15-16', g:'M', ev:'100back',   times:[t('1:05.99'),t('1:00.19'),t('54.49'),t('50.89'),t('47.79'),t('45.19')] },
-  { setId:'usswim-2425-scy', ag:'15-16', g:'M', ev:'200back',   times:[t('2:21.99'),t('2:09.69'),t('1:57.29'),t('1:49.59'),t('1:42.79'),t('1:36.99')] },
-  { setId:'usswim-2425-scy', ag:'15-16', g:'M', ev:'100breast', times:[t('1:11.49'),t('1:05.19'),t('58.99'),t('54.69'),t('51.29'),t('48.39')] },
-  { setId:'usswim-2425-scy', ag:'15-16', g:'M', ev:'200breast', times:[t('2:33.99'),t('2:20.59'),t('2:06.99'),t('1:57.79'),t('1:50.29'),t('1:43.69')] },
-  { setId:'usswim-2425-scy', ag:'15-16', g:'M', ev:'100fly',    times:[t('1:06.99'),t('1:00.99'),t('55.19'),t('51.49'),t('48.29'),t('45.59')] },
-  { setId:'usswim-2425-scy', ag:'15-16', g:'M', ev:'200fly',    times:[t('2:28.99'),t('2:15.99'),t('2:02.99'),t('1:54.99'),t('1:47.99'),t('1:41.99')] },
-  { setId:'usswim-2425-scy', ag:'15-16', g:'M', ev:'200im',     times:[t('2:13.99'),t('2:02.29'),t('1:50.59'),t('1:43.09'),t('1:36.99'),t('1:31.49')] },
-  { setId:'usswim-2425-scy', ag:'15-16', g:'M', ev:'400im',     times:[t('4:41.99'),t('4:17.49'),t('3:52.79'),t('3:37.69'),t('3:24.69'),t('3:12.49')] },
-  // ── Girls 17-18 ──────────────────────────────────────────────────────────────
-  { setId:'usswim-2425-scy', ag:'17-18', g:'F', ev:'50free',    times:[t('28.99'),t('26.49'),t('23.99'),t('22.49'),t('21.09'),t('19.99')] },
-  { setId:'usswim-2425-scy', ag:'17-18', g:'F', ev:'100free',   times:[t('1:02.99'),t('57.49'),t('51.99'),t('48.49'),t('45.49'),t('42.89')] },
-  { setId:'usswim-2425-scy', ag:'17-18', g:'F', ev:'200free',   times:[t('2:15.99'),t('2:03.99'),t('1:51.99'),t('1:44.69'),t('1:38.09'),t('1:32.19')] },
-  { setId:'usswim-2425-scy', ag:'17-18', g:'F', ev:'500free',   times:[t('6:04.99'),t('5:33.99'),t('5:02.99'),t('4:42.99'),t('4:25.99'),t('4:10.99')] },
-  { setId:'usswim-2425-scy', ag:'17-18', g:'F', ev:'1000free',  times:[t('12:59.99'),t('11:52.99'),t('10:44.99'),t('10:02.99'),t('9:26.99'),t('8:54.99')] },
-  { setId:'usswim-2425-scy', ag:'17-18', g:'F', ev:'1650free',  times:[t('21:39.99'),t('19:46.99'),t('17:54.99'),t('16:44.99'),t('15:45.99'),t('14:54.99')] },
-  { setId:'usswim-2425-scy', ag:'17-18', g:'F', ev:'100back',   times:[t('1:11.99'),t('1:05.49'),t('58.99'),t('55.09'),t('51.69'),t('48.79')] },
-  { setId:'usswim-2425-scy', ag:'17-18', g:'F', ev:'200back',   times:[t('2:33.99'),t('2:19.99'),t('2:05.99'),t('1:57.59'),t('1:50.19'),t('1:43.79')] },
-  { setId:'usswim-2425-scy', ag:'17-18', g:'F', ev:'100breast', times:[t('1:13.99'),t('1:07.69'),t('1:01.29'),t('56.79'),t('53.29'),t('50.29')] },
-  { setId:'usswim-2425-scy', ag:'17-18', g:'F', ev:'200breast', times:[t('2:39.99'),t('2:25.99'),t('2:11.99'),t('2:02.09'),t('1:53.99'),t('1:47.19')] },
-  { setId:'usswim-2425-scy', ag:'17-18', g:'F', ev:'100fly',    times:[t('1:10.99'),t('1:04.79'),t('58.49'),t('54.49'),t('51.09'),t('48.19')] },
-  { setId:'usswim-2425-scy', ag:'17-18', g:'F', ev:'200fly',    times:[t('2:36.99'),t('2:22.99'),t('2:08.99'),t('1:59.99'),t('1:52.99'),t('1:46.99')] },
-  { setId:'usswim-2425-scy', ag:'17-18', g:'F', ev:'200im',     times:[t('2:21.99'),t('2:08.99'),t('1:55.99'),t('1:47.99'),t('1:40.99'),t('1:34.99')] },
-  { setId:'usswim-2425-scy', ag:'17-18', g:'F', ev:'400im',     times:[t('4:59.99'),t('4:33.99'),t('4:07.99'),t('3:51.99'),t('3:37.99'),t('3:25.99')] },
-  // ── Boys 17-18 ───────────────────────────────────────────────────────────────
-  { setId:'usswim-2425-scy', ag:'17-18', g:'M', ev:'50free',    times:[t('24.99'),t('22.79'),t('20.69'),t('19.29'),t('18.09'),t('17.19')] },
-  { setId:'usswim-2425-scy', ag:'17-18', g:'M', ev:'100free',   times:[t('54.19'),t('49.39'),t('44.69'),t('41.69'),t('39.09'),t('36.89')] },
-  { setId:'usswim-2425-scy', ag:'17-18', g:'M', ev:'200free',   times:[t('1:57.99'),t('1:47.59'),t('1:37.29'),t('1:30.79'),t('1:25.09'),t('1:20.19')] },
-  { setId:'usswim-2425-scy', ag:'17-18', g:'M', ev:'500free',   times:[t('5:15.99'),t('4:48.99'),t('4:22.99'),t('4:05.99'),t('3:50.99'),t('3:37.99')] },
-  { setId:'usswim-2425-scy', ag:'17-18', g:'M', ev:'1000free',  times:[t('10:59.99'),t('10:02.99'),t('9:04.99'),t('8:29.99'),t('7:58.99'),t('7:32.99')] },
-  { setId:'usswim-2425-scy', ag:'17-18', g:'M', ev:'1650free',  times:[t('18:19.99'),t('16:44.99'),t('15:09.99'),t('14:10.99'),t('13:19.99'),t('12:34.99')] },
-  { setId:'usswim-2425-scy', ag:'17-18', g:'M', ev:'100back',   times:[t('1:00.99'),t('55.59'),t('50.29'),t('46.99'),t('44.09'),t('41.59')] },
-  { setId:'usswim-2425-scy', ag:'17-18', g:'M', ev:'200back',   times:[t('2:11.99'),t('2:00.29'),t('1:48.49'),t('1:41.29'),t('1:35.19'),t('1:29.99')] },
-  { setId:'usswim-2425-scy', ag:'17-18', g:'M', ev:'100breast', times:[t('1:05.99'),t('1:00.29'),t('54.49'),t('50.79'),t('47.69'),t('44.99')] },
-  { setId:'usswim-2425-scy', ag:'17-18', g:'M', ev:'200breast', times:[t('2:22.99'),t('2:10.19'),t('1:57.29'),t('1:49.09'),t('1:42.19'),t('1:36.09')] },
-  { setId:'usswim-2425-scy', ag:'17-18', g:'M', ev:'100fly',    times:[t('1:00.99'),t('55.49'),t('50.29'),t('46.99'),t('44.09'),t('41.59')] },
-  { setId:'usswim-2425-scy', ag:'17-18', g:'M', ev:'200fly',    times:[t('2:15.99'),t('2:03.99'),t('1:51.99'),t('1:43.99'),t('1:37.49'),t('1:31.99')] },
-  { setId:'usswim-2425-scy', ag:'17-18', g:'M', ev:'200im',     times:[t('2:03.99'),t('1:52.99'),t('1:41.99'),t('1:34.99'),t('1:28.99'),t('1:23.99')] },
-  { setId:'usswim-2425-scy', ag:'17-18', g:'M', ev:'400im',     times:[t('4:19.99'),t('3:57.49'),t('3:34.79'),t('3:19.99'),t('3:07.49'),t('2:55.99')] },
-];
+type GenderRow = { F: StandardTimes; M: StandardTimes };
+type EventMap = Record<AgeGroup, GenderRow>;
 
-// ─────────────────────────────────────────────────────────────────────────────
-// USA SWIMMING SCY 2025-26 — based on 2024-25 (standards re-evaluated per cycle)
-// ─────────────────────────────────────────────────────────────────────────────
-const SCY_2526: RawRow[] = SCY_2425.map(r => ({ ...r, setId: 'usswim-2526-scy' }));
+export const STANDARDS_2026: Record<string, EventMap> = {
+  '50free': {
+    '10&U': {
+      F: { silver: t('42.89'), gold: t('37.99'), zone: t('34.49') },
+      M: { silver: t('43.59'), gold: t('37.69'), zone: t('34.09') },
+    },
+    '11-12': {
+      F: { silver: t('35.49'), gold: t('32.99'), zone: t('29.99') },
+      M: { silver: t('35.59'), gold: t('32.39'), zone: t('29.69') },
+    },
+    '13-14': {
+      F: { silver: t('32.89'), gold: t('30.79'), zone: t('29.19') },
+      M: { silver: t('30.39'), gold: t('28.59'), zone: t('27.29') },
+    },
+    '15-18': {
+      F: { silver: t('31.79'), gold: t('29.89'), zone: null },
+      M: { silver: t('27.49'), gold: t('26.49'), zone: null },
+    },
+  },
+  '100free': {
+    '10&U': {
+      F: { silver: t('1:36.79'), gold: t('1:25.59'), zone: t('1:15.19') },
+      M: { silver: t('1:34.19'), gold: t('1:24.99'), zone: t('1:14.09') },
+    },
+    '11-12': {
+      F: { silver: t('1:17.29'), gold: t('1:11.99'), zone: t('1:05.19') },
+      M: { silver: t('1:16.79'), gold: t('1:10.99'), zone: t('1:04.09') },
+    },
+    '13-14': {
+      F: { silver: t('1:09.59'), gold: t('1:06.49'), zone: t('1:03.19') },
+      M: { silver: t('1:05.59'), gold: t('1:01.89'), zone: t('59.29') },
+    },
+    '15-18': {
+      F: { silver: t('1:06.39'), gold: t('1:04.29'), zone: null },
+      M: { silver: t('58.79'), gold: t('57.09'), zone: null },
+    },
+  },
+  '200free': {
+    '10&U': {
+      F: { silver: t('3:30.29'), gold: t('2:56.29'), zone: t('2:41.09') },
+      M: { silver: t('3:31.29'), gold: t('2:50.79'), zone: t('2:38.99') },
+    },
+    '11-12': {
+      F: { silver: t('2:47.19'), gold: t('2:34.89'), zone: t('2:20.29') },
+      M: { silver: t('2:45.79'), gold: t('2:32.19'), zone: t('2:15.99') },
+    },
+    '13-14': {
+      F: { silver: t('2:30.59'), gold: t('2:23.19'), zone: t('2:14.99') },
+      M: { silver: t('2:22.19'), gold: t('2:14.49'), zone: t('2:06.79') },
+    },
+    '15-18': {
+      F: { silver: t('2:25.09'), gold: t('2:17.99'), zone: null },
+      M: { silver: t('2:09.29'), gold: t('2:04.79'), zone: null },
+    },
+  },
+  '400free': {
+    '10&U': {
+      F: { silver: t('7:36.79'), gold: t('6:05.39'), zone: t('5:37.79') },
+      M: { silver: t('7:29.29'), gold: t('5:59.49'), zone: t('5:37.69') },
+    },
+    '11-12': {
+      F: { silver: t('5:56.49'), gold: t('5:29.09'), zone: t('4:57.89') },
+      M: { silver: t('6:15.49'), gold: t('5:21.89'), zone: t('4:51.09') },
+    },
+    '13-14': {
+      F: { silver: t('5:15.69'), gold: t('5:01.29'), zone: t('4:44.79') },
+      M: { silver: t('5:06.99'), gold: t('4:46.69'), zone: t('4:30.59') },
+    },
+    '15-18': {
+      F: { silver: t('5:15.89'), gold: t('4:54.49'), zone: null },
+      M: { silver: t('4:43.79'), gold: t('4:25.89'), zone: null },
+    },
+  },
+  '800free': {
+    '10&U': {
+      F: { silver: null, gold: null, zone: null },
+      M: { silver: null, gold: null, zone: null },
+    },
+    '11-12': {
+      F: { silver: t('12:26.69'), gold: t('11:29.29'), zone: null },
+      M: { silver: t('12:15.19'), gold: t('11:18.59'), zone: null },
+    },
+    '13-14': {
+      F: { silver: t('11:41.99'), gold: t('10:21.99'), zone: t('9:48.29') },
+      M: { silver: t('11:13.99'), gold: t('9:56.29'), zone: t('9:20.89') },
+    },
+    '15-18': {
+      F: { silver: t('11:28.39'), gold: t('10:10.99'), zone: null },
+      M: { silver: t('10:50.09'), gold: t('9:27.39'), zone: null },
+    },
+  },
+  '1500free': {
+    '10&U': {
+      F: { silver: null, gold: null, zone: null },
+      M: { silver: null, gold: null, zone: null },
+    },
+    '11-12': {
+      F: { silver: t('23:55.39'), gold: t('22:06.99'), zone: null },
+      M: { silver: t('23:25.49'), gold: t('21:39.39'), zone: null },
+    },
+    '13-14': {
+      F: { silver: t('22:23.09'), gold: t('19:49.09'), zone: t('19:00.49') },
+      M: { silver: t('21:27.39'), gold: t('18:58.99'), zone: t('18:00.79') },
+    },
+    '15-18': {
+      F: { silver: t('22:02.19'), gold: t('19:30.59'), zone: null },
+      M: { silver: t('20:33.99'), gold: t('18:11.69'), zone: null },
+    },
+  },
+  '50back': {
+    '10&U': {
+      F: { silver: t('50.19'), gold: t('45.29'), zone: t('40.59') },
+      M: { silver: t('52.49'), gold: t('44.49'), zone: t('40.39') },
+    },
+    '11-12': {
+      F: { silver: t('42.79'), gold: t('39.19'), zone: t('34.89') },
+      M: { silver: t('42.29'), gold: t('38.69'), zone: t('34.19') },
+    },
+    '13-14': {
+      F: { silver: null, gold: null, zone: null },
+      M: { silver: null, gold: null, zone: null },
+    },
+    '15-18': {
+      F: { silver: null, gold: null, zone: null },
+      M: { silver: null, gold: null, zone: null },
+    },
+  },
+  '100back': {
+    '10&U': {
+      F: { silver: t('1:48.19'), gold: t('1:38.29'), zone: t('1:26.79') },
+      M: { silver: t('1:47.69'), gold: t('1:37.19'), zone: t('1:26.09') },
+    },
+    '11-12': {
+      F: { silver: t('1:30.39'), gold: t('1:23.79'), zone: t('1:14.09') },
+      M: { silver: t('1:30.49'), gold: t('1:23.19'), zone: t('1:12.89') },
+    },
+    '13-14': {
+      F: { silver: t('1:20.49'), gold: t('1:16.09'), zone: t('1:12.19') },
+      M: { silver: t('1:16.79'), gold: t('1:12.19'), zone: t('1:08.19') },
+    },
+    '15-18': {
+      F: { silver: t('1:17.19'), gold: t('1:12.99'), zone: null },
+      M: { silver: t('1:09.89'), gold: t('1:06.29'), zone: null },
+    },
+  },
+  '200back': {
+    '10&U': {
+      F: { silver: null, gold: null, zone: null },
+      M: { silver: null, gold: null, zone: null },
+    },
+    '11-12': {
+      F: { silver: t('3:09.89'), gold: t('2:55.49'), zone: t('2:38.29') },
+      M: { silver: t('3:19.49'), gold: t('2:51.99'), zone: t('2:34.99') },
+    },
+    '13-14': {
+      F: { silver: t('2:49.59'), gold: t('2:38.09'), zone: t('2:33.29') },
+      M: { silver: t('2:43.19'), gold: t('2:29.59'), zone: t('2:23.89') },
+    },
+    '15-18': {
+      F: { silver: t('2:45.59'), gold: t('2:34.39'), zone: null },
+      M: { silver: t('2:34.89'), gold: t('2:22.49'), zone: null },
+    },
+  },
+  '50breast': {
+    '10&U': {
+      F: { silver: t('58.69'), gold: t('51.88'), zone: t('46.09') },
+      M: { silver: t('59.69'), gold: t('52.59'), zone: t('46.79') },
+    },
+    '11-12': {
+      F: { silver: t('48.59'), gold: t('44.29'), zone: t('39.19') },
+      M: { silver: t('48.99'), gold: t('44.49'), zone: t('38.59') },
+    },
+    '13-14': {
+      F: { silver: null, gold: null, zone: null },
+      M: { silver: null, gold: null, zone: null },
+    },
+    '15-18': {
+      F: { silver: null, gold: null, zone: null },
+      M: { silver: null, gold: null, zone: null },
+    },
+  },
+  '100breast': {
+    '10&U': {
+      F: { silver: t('2:07.59'), gold: t('1:54.19'), zone: t('1:39.19') },
+      M: { silver: t('2:09.39'), gold: t('1:55.99'), zone: t('1:39.99') },
+    },
+    '11-12': {
+      F: { silver: t('1:43.09'), gold: t('1:36.59'), zone: t('1:25.09') },
+      M: { silver: t('1:46.59'), gold: t('1:37.29'), zone: t('1:24.09') },
+    },
+    '13-14': {
+      F: { silver: t('1:34.49'), gold: t('1:27.69'), zone: t('1:21.39') },
+      M: { silver: t('1:29.79'), gold: t('1:22.29'), zone: t('1:17.49') },
+    },
+    '15-18': {
+      F: { silver: t('1:36.29'), gold: t('1:24.49'), zone: null },
+      M: { silver: t('1:19.39'), gold: t('1:13.99'), zone: null },
+    },
+  },
+  '200breast': {
+    '10&U': {
+      F: { silver: null, gold: null, zone: null },
+      M: { silver: null, gold: null, zone: null },
+    },
+    '11-12': {
+      F: { silver: t('3:35.99'), gold: t('3:19.39'), zone: t('3:00.99') },
+      M: { silver: t('3:44.69'), gold: t('3:13.59'), zone: t('2:58.19') },
+    },
+    '13-14': {
+      F: { silver: t('3:17.79'), gold: t('3:00.49'), zone: t('2:56.39') },
+      M: { silver: t('3:05.69'), gold: t('2:48.79'), zone: t('2:44.89') },
+    },
+    '15-18': {
+      F: { silver: t('3:20.49'), gold: t('2:57.39'), zone: null },
+      M: { silver: t('2:55.29'), gold: t('2:40.49'), zone: null },
+    },
+  },
+  '50fly': {
+    '10&U': {
+      F: { silver: t('53.39'), gold: t('45.09'), zone: t('38.19') },
+      M: { silver: t('51.79'), gold: t('44.39'), zone: t('37.89') },
+    },
+    '11-12': {
+      F: { silver: t('41.69'), gold: t('36.99'), zone: t('32.29') },
+      M: { silver: t('41.89'), gold: t('36.59'), zone: t('31.79') },
+    },
+    '13-14': {
+      F: { silver: null, gold: null, zone: null },
+      M: { silver: null, gold: null, zone: null },
+    },
+    '15-18': {
+      F: { silver: null, gold: null, zone: null },
+      M: { silver: null, gold: null, zone: null },
+    },
+  },
+  '100fly': {
+    '10&U': {
+      F: { silver: t('2:09.99'), gold: t('1:52.99'), zone: t('1:26.99') },
+      M: { silver: t('2:07.09'), gold: t('1:50.79'), zone: t('1:27.29') },
+    },
+    '11-12': {
+      F: { silver: t('1:36.19'), gold: t('1:27.29'), zone: t('1:12.69') },
+      M: { silver: t('1:33.99'), gold: t('1:26.29'), zone: t('1:11.39') },
+    },
+    '13-14': {
+      F: { silver: t('1:22.89'), gold: t('1:16.39'), zone: t('1:09.79') },
+      M: { silver: t('1:18.59'), gold: t('1:11.49'), zone: t('1:04.99') },
+    },
+    '15-18': {
+      F: { silver: t('1:19.19'), gold: t('1:11.09'), zone: null },
+      M: { silver: t('1:06.69'), gold: t('1:03.29'), zone: null },
+    },
+  },
+  '200fly': {
+    '10&U': {
+      F: { silver: null, gold: null, zone: null },
+      M: { silver: null, gold: null, zone: null },
+    },
+    '11-12': {
+      F: { silver: t('3:26.09'), gold: t('2:57.59'), zone: t('2:44.59') },
+      M: { silver: t('3:20.49'), gold: t('2:53.89'), zone: t('2:42.49') },
+    },
+    '13-14': {
+      F: { silver: t('3:12.99'), gold: t('2:38.59'), zone: t('2:38.09') },
+      M: { silver: t('3:00.89'), gold: t('2:29.59'), zone: t('2:26.39') },
+    },
+    '15-18': {
+      F: { silver: t('3:07.29'), gold: t('2:33.89'), zone: null },
+      M: { silver: t('2:52.29'), gold: t('2:23.49'), zone: null },
+    },
+  },
+  '200im': {
+    '10&U': {
+      F: { silver: t('4:09.39'), gold: t('3:18.09'), zone: t('3:02.49') },
+      M: { silver: t('4:06.19'), gold: t('3:16.39'), zone: t('2:59.89') },
+    },
+    '11-12': {
+      F: { silver: t('3:11.39'), gold: t('2:55.29'), zone: t('2:39.19') },
+      M: { silver: t('3:09.49'), gold: t('2:53.19'), zone: t('2:35.69') },
+    },
+    '13-14': {
+      F: { silver: t('2:50.49'), gold: t('2:40.79'), zone: t('2:33.09') },
+      M: { silver: t('2:39.19'), gold: t('2:31.59'), zone: t('2:23.59') },
+    },
+    '15-18': {
+      F: { silver: t('2:44.79'), gold: t('2:36.29'), zone: null },
+      M: { silver: t('2:26.99'), gold: t('2:20.89'), zone: null },
+    },
+  },
+  '400im': {
+    '10&U': {
+      F: { silver: null, gold: null, zone: null },
+      M: { silver: null, gold: null, zone: null },
+    },
+    '11-12': {
+      F: { silver: t('7:16.69'), gold: t('6:17.89'), zone: null },
+      M: { silver: t('7:09.89'), gold: t('6:09.49'), zone: null },
+    },
+    '13-14': {
+      F: { silver: t('6:11.59'), gold: t('5:41.29'), zone: t('5:25.09') },
+      M: { silver: t('5:53.69'), gold: t('5:22.59'), zone: t('5:05.19') },
+    },
+    '15-18': {
+      F: { silver: t('6:18.79'), gold: t('5:35.09'), zone: null },
+      M: { silver: t('5:31.29'), gold: t('5:05.29'), zone: null },
+    },
+  },
+};
 
-// ─────────────────────────────────────────────────────────────────────────────
-// USA SWIMMING LCM 2024-25 (levels: B BB A AA AAA AAAA)
-// ─────────────────────────────────────────────────────────────────────────────
-const LCM_2425: RawRow[] = [
-  // ── Girls 9-10 LCM ───────────────────────────────────────────────────────────
-  { setId:'usswim-2425-lcm', ag:'9-10',  g:'F', ev:'50free',    times:[t('50.09'),t('45.79'),t('41.39'),t('38.69'),t('36.29'),t('34.29')] },
-  { setId:'usswim-2425-lcm', ag:'9-10',  g:'F', ev:'100free',   times:[t('1:49.09'),t('1:39.59'),t('1:30.09'),t('1:23.89'),t('1:18.69'),t('1:14.29')] },
-  { setId:'usswim-2425-lcm', ag:'9-10',  g:'F', ev:'200free',   times:[t('3:51.09'),t('3:31.09'),t('3:10.09'),t('2:57.09'),t('2:46.09'),t('2:37.09')] },
-  { setId:'usswim-2425-lcm', ag:'9-10',  g:'F', ev:'100back',   times:[t('1:59.09'),t('1:48.69'),t('1:38.09'),t('1:31.69'),t('1:26.09'),t('1:21.09')] },
-  { setId:'usswim-2425-lcm', ag:'9-10',  g:'F', ev:'100breast', times:[t('2:06.09'),t('1:55.09'),t('1:44.09'),t('1:36.89'),t('1:30.69'),t('1:25.59')] },
-  { setId:'usswim-2425-lcm', ag:'9-10',  g:'F', ev:'100fly',    times:[t('1:58.09'),t('1:47.69'),t('1:37.09'),t('1:30.59'),t('1:25.09'),t('1:20.09')] },
-  { setId:'usswim-2425-lcm', ag:'9-10',  g:'F', ev:'200im',     times:[t('4:01.09'),t('3:40.09'),t('3:19.09'),t('3:06.49'),t('2:55.09'),t('2:45.09')] },
-  // ── Boys 9-10 LCM ────────────────────────────────────────────────────────────
-  { setId:'usswim-2425-lcm', ag:'9-10',  g:'M', ev:'50free',    times:[t('50.09'),t('45.79'),t('41.39'),t('38.69'),t('36.29'),t('34.29')] },
-  { setId:'usswim-2425-lcm', ag:'9-10',  g:'M', ev:'100free',   times:[t('1:49.09'),t('1:39.59'),t('1:30.09'),t('1:23.89'),t('1:18.69'),t('1:14.29')] },
-  { setId:'usswim-2425-lcm', ag:'9-10',  g:'M', ev:'200free',   times:[t('3:51.09'),t('3:31.09'),t('3:10.09'),t('2:57.09'),t('2:46.09'),t('2:37.09')] },
-  { setId:'usswim-2425-lcm', ag:'9-10',  g:'M', ev:'100back',   times:[t('1:59.09'),t('1:48.69'),t('1:38.09'),t('1:31.69'),t('1:26.09'),t('1:21.09')] },
-  { setId:'usswim-2425-lcm', ag:'9-10',  g:'M', ev:'100breast', times:[t('2:06.09'),t('1:55.09'),t('1:44.09'),t('1:36.89'),t('1:30.69'),t('1:25.59')] },
-  { setId:'usswim-2425-lcm', ag:'9-10',  g:'M', ev:'100fly',    times:[t('1:58.09'),t('1:47.69'),t('1:37.09'),t('1:30.59'),t('1:25.09'),t('1:20.09')] },
-  { setId:'usswim-2425-lcm', ag:'9-10',  g:'M', ev:'200im',     times:[t('4:01.09'),t('3:40.09'),t('3:19.09'),t('3:06.49'),t('2:55.09'),t('2:45.09')] },
-  // ── Girls 11-12 LCM ──────────────────────────────────────────────────────────
-  { setId:'usswim-2425-lcm', ag:'11-12', g:'F', ev:'50free',    times:[t('42.89'),t('39.09'),t('35.29'),t('32.99'),t('30.89'),t('29.19')] },
-  { setId:'usswim-2425-lcm', ag:'11-12', g:'F', ev:'100free',   times:[t('1:33.09'),t('1:24.59'),t('1:16.09'),t('1:11.09'),t('1:06.59'),t('1:03.09')] },
-  { setId:'usswim-2425-lcm', ag:'11-12', g:'F', ev:'200free',   times:[t('3:21.09'),t('3:03.09'),t('2:45.09'),t('2:35.09'),t('2:25.09'),t('2:17.09')] },
-  { setId:'usswim-2425-lcm', ag:'11-12', g:'F', ev:'400free',   times:[t('7:09.09'),t('6:31.09'),t('5:54.09'),t('5:32.09'),t('5:12.09'),t('4:53.09')] },
-  { setId:'usswim-2425-lcm', ag:'11-12', g:'F', ev:'800free',   times:[t('14:55.09'),t('13:35.09'),t('12:15.09'),t('11:29.09'),t('10:47.09'),t('10:09.09')] },
-  { setId:'usswim-2425-lcm', ag:'11-12', g:'F', ev:'100back',   times:[t('1:35.09'),t('1:26.09'),t('1:17.09'),t('1:11.89'),t('1:07.49'),t('1:03.89')] },
-  { setId:'usswim-2425-lcm', ag:'11-12', g:'F', ev:'200back',   times:[t('3:21.09'),t('3:03.09'),t('2:45.09'),t('2:34.09'),t('2:24.09'),t('2:15.09')] },
-  { setId:'usswim-2425-lcm', ag:'11-12', g:'F', ev:'100breast', times:[t('1:39.09'),t('1:30.09'),t('1:21.09'),t('1:15.39'),t('1:10.59'),t('1:06.69')] },
-  { setId:'usswim-2425-lcm', ag:'11-12', g:'F', ev:'200breast', times:[t('3:33.09'),t('3:14.09'),t('2:55.09'),t('2:43.09'),t('2:33.09'),t('2:23.09')] },
-  { setId:'usswim-2425-lcm', ag:'11-12', g:'F', ev:'100fly',    times:[t('1:36.09'),t('1:27.09'),t('1:18.09'),t('1:12.99'),t('1:08.49'),t('1:04.79')] },
-  { setId:'usswim-2425-lcm', ag:'11-12', g:'F', ev:'200fly',    times:[t('3:30.09'),t('3:11.09'),t('2:52.09'),t('2:41.09'),t('2:31.09'),t('2:21.09')] },
-  { setId:'usswim-2425-lcm', ag:'11-12', g:'F', ev:'200im',     times:[t('3:13.09'),t('2:55.09'),t('2:37.09'),t('2:27.09'),t('2:18.09'),t('2:09.09')] },
-  { setId:'usswim-2425-lcm', ag:'11-12', g:'F', ev:'400im',     times:[t('6:51.09'),t('6:15.09'),t('5:39.09'),t('5:17.09'),t('4:57.09'),t('4:39.09')] },
-  // ── Boys 11-12 LCM ───────────────────────────────────────────────────────────
-  { setId:'usswim-2425-lcm', ag:'11-12', g:'M', ev:'50free',    times:[t('42.49'),t('38.89'),t('35.19'),t('32.89'),t('30.79'),t('29.09')] },
-  { setId:'usswim-2425-lcm', ag:'11-12', g:'M', ev:'100free',   times:[t('1:33.49'),t('1:25.49'),t('1:17.29'),t('1:12.39'),t('1:07.89'),t('1:04.29')] },
-  { setId:'usswim-2425-lcm', ag:'11-12', g:'M', ev:'200free',   times:[t('3:25.49'),t('3:07.49'),t('2:49.49'),t('2:38.09'),t('2:27.89'),t('2:18.89')] },
-  { setId:'usswim-2425-lcm', ag:'11-12', g:'M', ev:'400free',   times:[t('7:18.09'),t('6:39.09'),t('6:01.09'),t('5:38.09'),t('5:18.09'),t('4:59.09')] },
-  { setId:'usswim-2425-lcm', ag:'11-12', g:'M', ev:'800free',   times:[t('15:05.09'),t('13:45.09'),t('12:25.09'),t('11:39.09'),t('10:57.09'),t('10:19.09')] },
-  { setId:'usswim-2425-lcm', ag:'11-12', g:'M', ev:'100back',   times:[t('1:37.09'),t('1:28.09'),t('1:19.09'),t('1:13.59'),t('1:09.29'),t('1:05.59')] },
-  { setId:'usswim-2425-lcm', ag:'11-12', g:'M', ev:'200back',   times:[t('3:26.09'),t('3:08.09'),t('2:50.09'),t('2:39.09'),t('2:29.09'),t('2:20.09')] },
-  { setId:'usswim-2425-lcm', ag:'11-12', g:'M', ev:'100breast', times:[t('1:41.09'),t('1:32.09'),t('1:23.09'),t('1:17.59'),t('1:12.89'),t('1:08.89')] },
-  { setId:'usswim-2425-lcm', ag:'11-12', g:'M', ev:'200breast', times:[t('3:39.09'),t('3:20.09'),t('3:01.09'),t('2:49.09'),t('2:38.09'),t('2:28.09')] },
-  { setId:'usswim-2425-lcm', ag:'11-12', g:'M', ev:'100fly',    times:[t('1:37.09'),t('1:28.09'),t('1:19.09'),t('1:13.79'),t('1:09.49'),t('1:05.79')] },
-  { setId:'usswim-2425-lcm', ag:'11-12', g:'M', ev:'200fly',    times:[t('3:33.09'),t('3:14.09'),t('2:55.09'),t('2:44.09'),t('2:34.09'),t('2:24.09')] },
-  { setId:'usswim-2425-lcm', ag:'11-12', g:'M', ev:'200im',     times:[t('3:19.09'),t('3:01.09'),t('2:43.09'),t('2:32.09'),t('2:22.09'),t('2:13.09')] },
-  { setId:'usswim-2425-lcm', ag:'11-12', g:'M', ev:'400im',     times:[t('7:03.09'),t('6:26.09'),t('5:49.09'),t('5:27.09'),t('5:07.09'),t('4:48.09')] },
-  // ── Girls 13-14 LCM ──────────────────────────────────────────────────────────
-  { setId:'usswim-2425-lcm', ag:'13-14', g:'F', ev:'50free',    times:[t('35.09'),t('31.89'),t('28.89'),t('26.89'),t('25.19'),t('23.79')] },
-  { setId:'usswim-2425-lcm', ag:'13-14', g:'F', ev:'100free',   times:[t('1:15.09'),t('1:08.39'),t('1:01.89'),t('57.59'),t('54.09'),t('51.09')] },
-  { setId:'usswim-2425-lcm', ag:'13-14', g:'F', ev:'200free',   times:[t('2:41.09'),t('2:26.09'),t('2:11.09'),t('2:02.09'),t('1:54.09'),t('1:47.09')] },
-  { setId:'usswim-2425-lcm', ag:'13-14', g:'F', ev:'400free',   times:[t('5:44.09'),t('5:14.09'),t('4:44.09'),t('4:26.09'),t('4:09.09'),t('3:54.09')] },
-  { setId:'usswim-2425-lcm', ag:'13-14', g:'F', ev:'800free',   times:[t('11:59.09'),t('10:59.09'),t('9:59.09'),t('9:21.09'),t('8:47.09'),t('8:17.09')] },
-  { setId:'usswim-2425-lcm', ag:'13-14', g:'F', ev:'1500free',  times:[t('23:09.09'),t('21:09.09'),t('19:09.09'),t('17:59.09'),t('16:59.09'),t('16:09.09')] },
-  { setId:'usswim-2425-lcm', ag:'13-14', g:'F', ev:'100back',   times:[t('1:23.09'),t('1:15.89'),t('1:08.89'),t('1:04.19'),t('1:00.19'),t('56.69')] },
-  { setId:'usswim-2425-lcm', ag:'13-14', g:'F', ev:'200back',   times:[t('2:57.09'),t('2:41.09'),t('2:25.09'),t('2:15.09'),t('2:07.09'),t('1:59.09')] },
-  { setId:'usswim-2425-lcm', ag:'13-14', g:'F', ev:'100breast', times:[t('1:28.09'),t('1:20.09'),t('1:12.69'),t('1:07.19'),t('1:03.09'),t('59.59')] },
-  { setId:'usswim-2425-lcm', ag:'13-14', g:'F', ev:'200breast', times:[t('3:09.09'),t('2:52.09'),t('2:35.09'),t('2:24.09'),t('2:14.09'),t('2:05.09')] },
-  { setId:'usswim-2425-lcm', ag:'13-14', g:'F', ev:'100fly',    times:[t('1:23.09'),t('1:16.09'),t('1:08.69'),t('1:04.09'),t('1:00.09'),t('56.59')] },
-  { setId:'usswim-2425-lcm', ag:'13-14', g:'F', ev:'200fly',    times:[t('3:05.09'),t('2:49.09'),t('2:32.09'),t('2:22.09'),t('2:13.09'),t('2:04.09')] },
-  { setId:'usswim-2425-lcm', ag:'13-14', g:'F', ev:'200im',     times:[t('2:48.09'),t('2:33.09'),t('2:18.09'),t('2:09.09'),t('2:01.09'),t('1:53.09')] },
-  { setId:'usswim-2425-lcm', ag:'13-14', g:'F', ev:'400im',     times:[t('5:55.09'),t('5:25.09'),t('4:55.09'),t('4:35.09'),t('4:18.09'),t('4:03.09')] },
-  // ── Boys 13-14 LCM ───────────────────────────────────────────────────────────
-  { setId:'usswim-2425-lcm', ag:'13-14', g:'M', ev:'50free',    times:[t('33.09'),t('30.19'),t('27.39'),t('25.49'),t('23.89'),t('22.59')] },
-  { setId:'usswim-2425-lcm', ag:'13-14', g:'M', ev:'100free',   times:[t('1:11.09'),t('1:04.69'),t('58.59'),t('54.49'),t('51.19'),t('48.29')] },
-  { setId:'usswim-2425-lcm', ag:'13-14', g:'M', ev:'200free',   times:[t('2:33.09'),t('2:19.09'),t('2:05.09'),t('1:57.09'),t('1:50.09'),t('1:43.09')] },
-  { setId:'usswim-2425-lcm', ag:'13-14', g:'M', ev:'400free',   times:[t('5:26.09'),t('4:58.09'),t('4:30.09'),t('4:12.09'),t('3:57.09'),t('3:43.09')] },
-  { setId:'usswim-2425-lcm', ag:'13-14', g:'M', ev:'800free',   times:[t('11:25.09'),t('10:27.09'),t('9:29.09'),t('8:51.09'),t('8:18.09'),t('7:49.09')] },
-  { setId:'usswim-2425-lcm', ag:'13-14', g:'M', ev:'1500free',  times:[t('22:09.09'),t('20:09.09'),t('18:09.09'),t('16:59.09'),t('15:59.09'),t('15:09.09')] },
-  { setId:'usswim-2425-lcm', ag:'13-14', g:'M', ev:'100back',   times:[t('1:18.09'),t('1:11.29'),t('1:04.59'),t('1:00.19'),t('56.59'),t('53.39')] },
-  { setId:'usswim-2425-lcm', ag:'13-14', g:'M', ev:'200back',   times:[t('2:47.09'),t('2:32.09'),t('2:17.09'),t('2:08.09'),t('2:00.09'),t('1:53.09')] },
-  { setId:'usswim-2425-lcm', ag:'13-14', g:'M', ev:'100breast', times:[t('1:24.09'),t('1:16.39'),t('1:09.09'),t('1:04.39'),t('1:00.39'),t('56.89')] },
-  { setId:'usswim-2425-lcm', ag:'13-14', g:'M', ev:'200breast', times:[t('3:01.09'),t('2:45.09'),t('2:29.09'),t('2:19.09'),t('2:10.09'),t('2:02.09')] },
-  { setId:'usswim-2425-lcm', ag:'13-14', g:'M', ev:'100fly',    times:[t('1:18.09'),t('1:11.09'),t('1:04.49'),t('1:00.09'),t('56.39'),t('53.19')] },
-  { setId:'usswim-2425-lcm', ag:'13-14', g:'M', ev:'200fly',    times:[t('2:52.09'),t('2:37.09'),t('2:22.09'),t('2:13.09'),t('2:05.09'),t('1:57.09')] },
-  { setId:'usswim-2425-lcm', ag:'13-14', g:'M', ev:'200im',     times:[t('2:39.09'),t('2:25.09'),t('2:11.09'),t('2:02.09'),t('1:55.09'),t('1:48.09')] },
-  { setId:'usswim-2425-lcm', ag:'13-14', g:'M', ev:'400im',     times:[t('5:35.09'),t('5:06.09'),t('4:37.09'),t('4:19.09'),t('4:03.09'),t('3:49.09')] },
-  // ── Girls 15-16 LCM ──────────────────────────────────────────────────────────
-  { setId:'usswim-2425-lcm', ag:'15-16', g:'F', ev:'50free',    times:[t('31.89'),t('29.19'),t('26.39'),t('24.59'),t('23.09'),t('21.89')] },
-  { setId:'usswim-2425-lcm', ag:'15-16', g:'F', ev:'100free',   times:[t('1:09.09'),t('1:02.89'),t('56.89'),t('52.99'),t('49.79'),t('46.99')] },
-  { setId:'usswim-2425-lcm', ag:'15-16', g:'F', ev:'200free',   times:[t('2:29.09'),t('2:15.09'),t('2:01.09'),t('1:53.09'),t('1:46.09'),t('1:39.09')] },
-  { setId:'usswim-2425-lcm', ag:'15-16', g:'F', ev:'400free',   times:[t('5:16.09'),t('4:49.09'),t('4:22.09'),t('4:04.09'),t('3:49.09'),t('3:36.09')] },
-  { setId:'usswim-2425-lcm', ag:'15-16', g:'F', ev:'800free',   times:[t('11:01.09'),t('10:04.09'),t('9:07.09'),t('8:31.09'),t('8:00.09'),t('7:32.09')] },
-  { setId:'usswim-2425-lcm', ag:'15-16', g:'F', ev:'1500free',  times:[t('21:09.09'),t('19:19.09'),t('17:29.09'),t('16:21.09'),t('15:21.09'),t('14:29.09')] },
-  { setId:'usswim-2425-lcm', ag:'15-16', g:'F', ev:'100back',   times:[t('1:18.09'),t('1:10.79'),t('1:03.89'),t('59.49'),t('55.89'),t('52.79')] },
-  { setId:'usswim-2425-lcm', ag:'15-16', g:'F', ev:'200back',   times:[t('2:47.09'),t('2:32.09'),t('2:17.09'),t('2:08.09'),t('2:00.09'),t('1:53.09')] },
-  { setId:'usswim-2425-lcm', ag:'15-16', g:'F', ev:'100breast', times:[t('1:21.09'),t('1:14.09'),t('1:06.79'),t('1:02.19'),t('58.29'),t('54.99')] },
-  { setId:'usswim-2425-lcm', ag:'15-16', g:'F', ev:'200breast', times:[t('2:54.09'),t('2:39.09'),t('2:24.09'),t('2:14.09'),t('2:05.09'),t('1:57.09')] },
-  { setId:'usswim-2425-lcm', ag:'15-16', g:'F', ev:'100fly',    times:[t('1:17.09'),t('1:10.09'),t('1:03.09'),t('58.89'),t('55.29'),t('52.19')] },
-  { setId:'usswim-2425-lcm', ag:'15-16', g:'F', ev:'200fly',    times:[t('2:51.09'),t('2:36.09'),t('2:21.09'),t('2:12.09'),t('2:04.09'),t('1:57.09')] },
-  { setId:'usswim-2425-lcm', ag:'15-16', g:'F', ev:'200im',     times:[t('2:37.09'),t('2:23.09'),t('2:09.09'),t('2:00.09'),t('1:52.09'),t('1:45.09')] },
-  { setId:'usswim-2425-lcm', ag:'15-16', g:'F', ev:'400im',     times:[t('5:31.09'),t('5:03.09'),t('4:34.09'),t('4:16.09'),t('4:00.09'),t('3:46.09')] },
-  // ── Boys 15-16 LCM ───────────────────────────────────────────────────────────
-  { setId:'usswim-2425-lcm', ag:'15-16', g:'M', ev:'50free',    times:[t('28.89'),t('26.39'),t('23.89'),t('22.29'),t('20.89'),t('19.89')] },
-  { setId:'usswim-2425-lcm', ag:'15-16', g:'M', ev:'100free',   times:[t('1:02.09'),t('56.59'),t('51.29'),t('47.89'),t('44.89'),t('42.49')] },
-  { setId:'usswim-2425-lcm', ag:'15-16', g:'M', ev:'200free',   times:[t('2:14.09'),t('2:02.09'),t('1:50.09'),t('1:42.09'),t('1:36.09'),t('1:31.09')] },
-  { setId:'usswim-2425-lcm', ag:'15-16', g:'M', ev:'400free',   times:[t('4:46.09'),t('4:21.09'),t('3:56.09'),t('3:41.09'),t('3:28.09'),t('3:16.09')] },
-  { setId:'usswim-2425-lcm', ag:'15-16', g:'M', ev:'800free',   times:[t('9:59.09'),t('9:08.09'),t('8:17.09'),t('7:45.09'),t('7:17.09'),t('6:52.09')] },
-  { setId:'usswim-2425-lcm', ag:'15-16', g:'M', ev:'1500free',  times:[t('18:59.09'),t('17:21.09'),t('15:43.09'),t('14:43.09'),t('13:49.09'),t('13:01.09')] },
-  { setId:'usswim-2425-lcm', ag:'15-16', g:'M', ev:'100back',   times:[t('1:10.09'),t('1:04.09'),t('57.89'),t('54.09'),t('50.79'),t('47.89')] },
-  { setId:'usswim-2425-lcm', ag:'15-16', g:'M', ev:'200back',   times:[t('2:31.09'),t('2:18.09'),t('2:04.09'),t('1:56.09'),t('1:49.09'),t('1:42.09')] },
-  { setId:'usswim-2425-lcm', ag:'15-16', g:'M', ev:'100breast', times:[t('1:16.09'),t('1:09.09'),t('1:02.59'),t('57.89'),t('54.29'),t('51.29')] },
-  { setId:'usswim-2425-lcm', ag:'15-16', g:'M', ev:'200breast', times:[t('2:44.09'),t('2:30.09'),t('2:15.09'),t('2:06.09'),t('1:58.09'),t('1:51.09')] },
-  { setId:'usswim-2425-lcm', ag:'15-16', g:'M', ev:'100fly',    times:[t('1:11.09'),t('1:04.89'),t('58.49'),t('54.69'),t('51.29'),t('48.39')] },
-  { setId:'usswim-2425-lcm', ag:'15-16', g:'M', ev:'200fly',    times:[t('2:38.09'),t('2:24.09'),t('2:10.09'),t('2:02.09'),t('1:54.09'),t('1:47.09')] },
-  { setId:'usswim-2425-lcm', ag:'15-16', g:'M', ev:'200im',     times:[t('2:23.09'),t('2:10.09'),t('1:58.09'),t('1:50.09'),t('1:43.09'),t('1:37.09')] },
-  { setId:'usswim-2425-lcm', ag:'15-16', g:'M', ev:'400im',     times:[t('5:01.09'),t('4:35.09'),t('4:10.09'),t('3:54.09'),t('3:39.09'),t('3:26.09')] },
-  // ── Girls 17-18 LCM ──────────────────────────────────────────────────────────
-  { setId:'usswim-2425-lcm', ag:'17-18', g:'F', ev:'50free',    times:[t('30.89'),t('28.19'),t('25.49'),t('23.79'),t('22.39'),t('21.09')] },
-  { setId:'usswim-2425-lcm', ag:'17-18', g:'F', ev:'100free',   times:[t('1:06.89'),t('1:00.89'),t('54.89'),t('51.09'),t('47.99'),t('45.19')] },
-  { setId:'usswim-2425-lcm', ag:'17-18', g:'F', ev:'200free',   times:[t('2:24.09'),t('2:10.09'),t('1:56.09'),t('1:48.09'),t('1:41.09'),t('1:35.09')] },
-  { setId:'usswim-2425-lcm', ag:'17-18', g:'F', ev:'400free',   times:[t('5:05.09'),t('4:38.09'),t('4:11.09'),t('3:54.09'),t('3:40.09'),t('3:27.09')] },
-  { setId:'usswim-2425-lcm', ag:'17-18', g:'F', ev:'800free',   times:[t('10:39.09'),t('9:44.09'),t('8:49.09'),t('8:13.09'),t('7:43.09'),t('7:17.09')] },
-  { setId:'usswim-2425-lcm', ag:'17-18', g:'F', ev:'1500free',  times:[t('20:19.09'),t('18:33.09'),t('16:47.09'),t('15:41.09'),t('14:47.09'),t('13:59.09')] },
-  { setId:'usswim-2425-lcm', ag:'17-18', g:'F', ev:'100back',   times:[t('1:15.89'),t('1:09.09'),t('1:02.09'),t('57.79'),t('54.29'),t('51.19')] },
-  { setId:'usswim-2425-lcm', ag:'17-18', g:'F', ev:'200back',   times:[t('2:43.09'),t('2:28.09'),t('2:13.09'),t('2:04.09'),t('1:56.09'),t('1:49.09')] },
-  { setId:'usswim-2425-lcm', ag:'17-18', g:'F', ev:'100breast', times:[t('1:17.89'),t('1:11.09'),t('1:04.09'),t('59.49'),t('55.79'),t('52.59')] },
-  { setId:'usswim-2425-lcm', ag:'17-18', g:'F', ev:'200breast', times:[t('2:49.09'),t('2:34.09'),t('2:19.09'),t('2:09.09'),t('2:00.09'),t('1:53.09')] },
-  { setId:'usswim-2425-lcm', ag:'17-18', g:'F', ev:'100fly',    times:[t('1:14.89'),t('1:08.19'),t('1:01.09'),t('57.09'),t('53.69'),t('50.49')] },
-  { setId:'usswim-2425-lcm', ag:'17-18', g:'F', ev:'200fly',    times:[t('2:46.09'),t('2:31.09'),t('2:16.09'),t('2:07.09'),t('1:59.09'),t('1:52.09')] },
-  { setId:'usswim-2425-lcm', ag:'17-18', g:'F', ev:'200im',     times:[t('2:33.09'),t('2:18.09'),t('2:04.09'),t('1:55.09'),t('1:47.09'),t('1:40.09')] },
-  { setId:'usswim-2425-lcm', ag:'17-18', g:'F', ev:'400im',     times:[t('5:22.09'),t('4:54.09'),t('4:26.09'),t('4:08.09'),t('3:52.09'),t('3:38.09')] },
-  // ── Boys 17-18 LCM ───────────────────────────────────────────────────────────
-  { setId:'usswim-2425-lcm', ag:'17-18', g:'M', ev:'50free',    times:[t('26.89'),t('24.59'),t('22.29'),t('20.79'),t('19.49'),t('18.49')] },
-  { setId:'usswim-2425-lcm', ag:'17-18', g:'M', ev:'100free',   times:[t('58.39'),t('53.19'),t('47.99'),t('44.79'),t('42.09'),t('39.69')] },
-  { setId:'usswim-2425-lcm', ag:'17-18', g:'M', ev:'200free',   times:[t('2:06.09'),t('1:55.09'),t('1:44.09'),t('1:37.09'),t('1:31.09'),t('1:25.09')] },
-  { setId:'usswim-2425-lcm', ag:'17-18', g:'M', ev:'400free',   times:[t('4:26.09'),t('4:03.09'),t('3:40.09'),t('3:26.09'),t('3:13.09'),t('3:02.09')] },
-  { setId:'usswim-2425-lcm', ag:'17-18', g:'M', ev:'800free',   times:[t('9:17.09'),t('8:30.09'),t('7:42.09'),t('7:12.09'),t('6:46.09'),t('6:22.09')] },
-  { setId:'usswim-2425-lcm', ag:'17-18', g:'M', ev:'1500free',  times:[t('17:41.09'),t('16:09.09'),t('14:37.09'),t('13:41.09'),t('12:51.09'),t('12:07.09')] },
-  { setId:'usswim-2425-lcm', ag:'17-18', g:'M', ev:'100back',   times:[t('1:04.09'),t('58.49'),t('52.89'),t('49.39'),t('46.39'),t('43.69')] },
-  { setId:'usswim-2425-lcm', ag:'17-18', g:'M', ev:'200back',   times:[t('2:18.09'),t('2:05.89'),t('1:53.09'),t('1:45.69'),t('1:39.09'),t('1:33.29')] },
-  { setId:'usswim-2425-lcm', ag:'17-18', g:'M', ev:'100breast', times:[t('1:09.09'),t('1:03.09'),t('56.89'),t('53.09'),t('49.79'),t('46.99')] },
-  { setId:'usswim-2425-lcm', ag:'17-18', g:'M', ev:'200breast', times:[t('2:30.09'),t('2:17.09'),t('2:04.09'),t('1:55.09'),t('1:47.09'),t('1:40.09')] },
-  { setId:'usswim-2425-lcm', ag:'17-18', g:'M', ev:'100fly',    times:[t('1:04.09'),t('58.49'),t('52.69'),t('49.29'),t('46.29'),t('43.59')] },
-  { setId:'usswim-2425-lcm', ag:'17-18', g:'M', ev:'200fly',    times:[t('2:21.09'),t('2:09.09'),t('1:57.09'),t('1:49.09'),t('1:42.09'),t('1:36.09')] },
-  { setId:'usswim-2425-lcm', ag:'17-18', g:'M', ev:'200im',     times:[t('2:12.09'),t('2:00.59'),t('1:49.09'),t('1:41.99'),t('1:35.09'),t('1:29.09')] },
-  { setId:'usswim-2425-lcm', ag:'17-18', g:'M', ev:'400im',     times:[t('4:38.09'),t('4:14.09'),t('3:50.09'),t('3:35.09'),t('3:22.09'),t('3:10.09')] },
-];
-
-const LCM_2526: RawRow[] = LCM_2425.map(r => ({ ...r, setId: 'usswim-2526-lcm' }));
-
-// ─────────────────────────────────────────────────────────────────────────────
-// NJ STATE SCY — Silver / Gold  (levels index: 0=Silver 1=Gold)
-// ─────────────────────────────────────────────────────────────────────────────
-const NJ_STATE: RawRow[] = [
-  // ── Girls 9-10 ───────────────────────────────────────────────────────────────
-  { setId:'nj-state-scy', ag:'9-10',  g:'F', ev:'50free',    times:[t('40.99'),t('37.99')] },
-  { setId:'nj-state-scy', ag:'9-10',  g:'F', ev:'100free',   times:[t('1:28.99'),t('1:21.49')] },
-  { setId:'nj-state-scy', ag:'9-10',  g:'F', ev:'200free',   times:[t('3:10.99'),t('2:55.19')] },
-  { setId:'nj-state-scy', ag:'9-10',  g:'F', ev:'100back',   times:[t('1:37.49'),t('1:30.09')] },
-  { setId:'nj-state-scy', ag:'9-10',  g:'F', ev:'100breast', times:[t('1:43.49'),t('1:35.09')] },
-  { setId:'nj-state-scy', ag:'9-10',  g:'F', ev:'100fly',    times:[t('1:37.49'),t('1:30.09')] },
-  { setId:'nj-state-scy', ag:'9-10',  g:'F', ev:'200im',     times:[t('3:21.09'),t('3:04.59')] },
-  // ── Boys 9-10 ────────────────────────────────────────────────────────────────
-  { setId:'nj-state-scy', ag:'9-10',  g:'M', ev:'50free',    times:[t('41.09'),t('38.09')] },
-  { setId:'nj-state-scy', ag:'9-10',  g:'M', ev:'100free',   times:[t('1:29.09'),t('1:21.59')] },
-  { setId:'nj-state-scy', ag:'9-10',  g:'M', ev:'200free',   times:[t('3:11.09'),t('2:55.29')] },
-  { setId:'nj-state-scy', ag:'9-10',  g:'M', ev:'100back',   times:[t('1:37.59'),t('1:30.19')] },
-  { setId:'nj-state-scy', ag:'9-10',  g:'M', ev:'100breast', times:[t('1:43.59'),t('1:35.19')] },
-  { setId:'nj-state-scy', ag:'9-10',  g:'M', ev:'100fly',    times:[t('1:37.59'),t('1:30.19')] },
-  { setId:'nj-state-scy', ag:'9-10',  g:'M', ev:'200im',     times:[t('3:21.19'),t('3:04.69')] },
-  // ── Girls 11-12 ──────────────────────────────────────────────────────────────
-  { setId:'nj-state-scy', ag:'11-12', g:'F', ev:'50free',    times:[t('32.09'),t('29.59')] },
-  { setId:'nj-state-scy', ag:'11-12', g:'F', ev:'100free',   times:[t('1:09.49'),t('1:04.29')] },
-  { setId:'nj-state-scy', ag:'11-12', g:'F', ev:'200free',   times:[t('2:31.09'),t('2:20.19')] },
-  { setId:'nj-state-scy', ag:'11-12', g:'F', ev:'500free',   times:[t('6:54.59'),t('6:22.09')] },
-  { setId:'nj-state-scy', ag:'11-12', g:'F', ev:'100back',   times:[t('1:16.19'),t('1:10.59')] },
-  { setId:'nj-state-scy', ag:'11-12', g:'F', ev:'200back',   times:[t('2:43.99'),t('2:31.49')] },
-  { setId:'nj-state-scy', ag:'11-12', g:'F', ev:'100breast', times:[t('1:22.19'),t('1:15.89')] },
-  { setId:'nj-state-scy', ag:'11-12', g:'F', ev:'200breast', times:[t('2:57.89'),t('2:44.09')] },
-  { setId:'nj-state-scy', ag:'11-12', g:'F', ev:'100fly',    times:[t('1:16.19'),t('1:10.19')] },
-  { setId:'nj-state-scy', ag:'11-12', g:'F', ev:'200fly',    times:[t('2:53.99'),t('2:40.59')] },
-  { setId:'nj-state-scy', ag:'11-12', g:'F', ev:'200im',     times:[t('2:40.09'),t('2:27.69')] },
-  { setId:'nj-state-scy', ag:'11-12', g:'F', ev:'400im',     times:[t('5:39.99'),t('5:11.59')] },
-  // ── Boys 11-12 ───────────────────────────────────────────────────────────────
-  { setId:'nj-state-scy', ag:'11-12', g:'M', ev:'50free',    times:[t('32.09'),t('29.59')] },
-  { setId:'nj-state-scy', ag:'11-12', g:'M', ev:'100free',   times:[t('1:10.39'),t('1:05.29')] },
-  { setId:'nj-state-scy', ag:'11-12', g:'M', ev:'200free',   times:[t('2:33.99'),t('2:23.09')] },
-  { setId:'nj-state-scy', ag:'11-12', g:'M', ev:'500free',   times:[t('7:07.89'),t('6:33.59')] },
-  { setId:'nj-state-scy', ag:'11-12', g:'M', ev:'100back',   times:[t('1:17.69'),t('1:12.29')] },
-  { setId:'nj-state-scy', ag:'11-12', g:'M', ev:'200back',   times:[t('2:48.09'),t('2:34.99')] },
-  { setId:'nj-state-scy', ag:'11-12', g:'M', ev:'100breast', times:[t('1:24.09'),t('1:17.79')] },
-  { setId:'nj-state-scy', ag:'11-12', g:'M', ev:'200breast', times:[t('3:02.89'),t('2:47.89')] },
-  { setId:'nj-state-scy', ag:'11-12', g:'M', ev:'100fly',    times:[t('1:17.69'),t('1:12.09')] },
-  { setId:'nj-state-scy', ag:'11-12', g:'M', ev:'200fly',    times:[t('2:58.09'),t('2:44.09')] },
-  { setId:'nj-state-scy', ag:'11-12', g:'M', ev:'200im',     times:[t('2:44.09'),t('2:31.99')] },
-  { setId:'nj-state-scy', ag:'11-12', g:'M', ev:'400im',     times:[t('5:46.09'),t('5:18.69')] },
-  // ── Girls 13-14 ──────────────────────────────────────────────────────────────
-  { setId:'nj-state-scy', ag:'13-14', g:'F', ev:'50free',    times:[t('28.09'),t('25.89')] },
-  { setId:'nj-state-scy', ag:'13-14', g:'F', ev:'100free',   times:[t('1:00.69'),t('55.99')] },
-  { setId:'nj-state-scy', ag:'13-14', g:'F', ev:'200free',   times:[t('2:11.09'),t('2:01.79')] },
-  { setId:'nj-state-scy', ag:'13-14', g:'F', ev:'500free',   times:[t('5:59.39'),t('5:31.29')] },
-  { setId:'nj-state-scy', ag:'13-14', g:'F', ev:'100back',   times:[t('1:07.39'),t('1:02.19')] },
-  { setId:'nj-state-scy', ag:'13-14', g:'F', ev:'200back',   times:[t('2:24.09'),t('2:13.99')] },
-  { setId:'nj-state-scy', ag:'13-14', g:'F', ev:'100breast', times:[t('1:12.19'),t('1:06.39')] },
-  { setId:'nj-state-scy', ag:'13-14', g:'F', ev:'200breast', times:[t('2:35.59'),t('2:24.09')] },
-  { setId:'nj-state-scy', ag:'13-14', g:'F', ev:'100fly',    times:[t('1:07.39'),t('1:02.09')] },
-  { setId:'nj-state-scy', ag:'13-14', g:'F', ev:'200fly',    times:[t('2:32.09'),t('2:20.49')] },
-  { setId:'nj-state-scy', ag:'13-14', g:'F', ev:'200im',     times:[t('2:19.89'),t('2:08.89')] },
-  { setId:'nj-state-scy', ag:'13-14', g:'F', ev:'400im',     times:[t('4:55.09'),t('4:31.49')] },
-  // ── Boys 13-14 ───────────────────────────────────────────────────────────────
-  { setId:'nj-state-scy', ag:'13-14', g:'M', ev:'50free',    times:[t('26.49'),t('24.39')] },
-  { setId:'nj-state-scy', ag:'13-14', g:'M', ev:'100free',   times:[t('57.29'),t('52.89')] },
-  { setId:'nj-state-scy', ag:'13-14', g:'M', ev:'200free',   times:[t('2:04.09'),t('1:55.09')] },
-  { setId:'nj-state-scy', ag:'13-14', g:'M', ev:'500free',   times:[t('5:41.59'),t('5:14.69')] },
-  { setId:'nj-state-scy', ag:'13-14', g:'M', ev:'100back',   times:[t('1:03.69'),t('58.99')] },
-  { setId:'nj-state-scy', ag:'13-14', g:'M', ev:'200back',   times:[t('2:17.09'),t('2:07.09')] },
-  { setId:'nj-state-scy', ag:'13-14', g:'M', ev:'100breast', times:[t('1:08.29'),t('1:03.19')] },
-  { setId:'nj-state-scy', ag:'13-14', g:'M', ev:'200breast', times:[t('2:27.69'),t('2:16.79')] },
-  { setId:'nj-state-scy', ag:'13-14', g:'M', ev:'100fly',    times:[t('1:03.69'),t('58.99')] },
-  { setId:'nj-state-scy', ag:'13-14', g:'M', ev:'200fly',    times:[t('2:25.49'),t('2:14.09')] },
-  { setId:'nj-state-scy', ag:'13-14', g:'M', ev:'200im',     times:[t('2:12.09'),t('2:02.29')] },
-  { setId:'nj-state-scy', ag:'13-14', g:'M', ev:'400im',     times:[t('4:37.49'),t('4:15.89')] },
-  // ── Girls 15-16 ──────────────────────────────────────────────────────────────
-  { setId:'nj-state-scy', ag:'15-16', g:'F', ev:'50free',    times:[t('26.09'),t('24.09')] },
-  { setId:'nj-state-scy', ag:'15-16', g:'F', ev:'100free',   times:[t('56.49'),t('52.19')] },
-  { setId:'nj-state-scy', ag:'15-16', g:'F', ev:'200free',   times:[t('2:01.59'),t('1:53.29')] },
-  { setId:'nj-state-scy', ag:'15-16', g:'F', ev:'500free',   times:[t('5:33.99'),t('5:07.99')] },
-  { setId:'nj-state-scy', ag:'15-16', g:'F', ev:'100back',   times:[t('1:03.39'),t('58.39')] },
-  { setId:'nj-state-scy', ag:'15-16', g:'F', ev:'200back',   times:[t('2:15.39'),t('2:05.79')] },
-  { setId:'nj-state-scy', ag:'15-16', g:'F', ev:'100breast', times:[t('1:07.59'),t('1:02.19')] },
-  { setId:'nj-state-scy', ag:'15-16', g:'F', ev:'200breast', times:[t('2:25.29'),t('2:14.39')] },
-  { setId:'nj-state-scy', ag:'15-16', g:'F', ev:'100fly',    times:[t('1:03.39'),t('58.09')] },
-  { setId:'nj-state-scy', ag:'15-16', g:'F', ev:'200fly',    times:[t('2:22.89'),t('2:12.09')] },
-  { setId:'nj-state-scy', ag:'15-16', g:'F', ev:'200im',     times:[t('2:14.09'),t('2:04.09')] },
-  { setId:'nj-state-scy', ag:'15-16', g:'F', ev:'400im',     times:[t('4:42.39'),t('4:20.79')] },
-  // ── Boys 15-16 ───────────────────────────────────────────────────────────────
-  { setId:'nj-state-scy', ag:'15-16', g:'M', ev:'50free',    times:[t('23.09'),t('21.39')] },
-  { setId:'nj-state-scy', ag:'15-16', g:'M', ev:'100free',   times:[t('50.09'),t('46.39')] },
-  { setId:'nj-state-scy', ag:'15-16', g:'M', ev:'200free',   times:[t('1:49.09'),t('1:41.29')] },
-  { setId:'nj-state-scy', ag:'15-16', g:'M', ev:'500free',   times:[t('5:01.09'),t('4:38.09')] },
-  { setId:'nj-state-scy', ag:'15-16', g:'M', ev:'100back',   times:[t('56.59'),t('52.49')] },
-  { setId:'nj-state-scy', ag:'15-16', g:'M', ev:'200back',   times:[t('2:02.09'),t('1:53.09')] },
-  { setId:'nj-state-scy', ag:'15-16', g:'M', ev:'100breast', times:[t('1:02.09'),t('57.49')] },
-  { setId:'nj-state-scy', ag:'15-16', g:'M', ev:'200breast', times:[t('2:14.09'),t('2:04.09')] },
-  { setId:'nj-state-scy', ag:'15-16', g:'M', ev:'100fly',    times:[t('56.59'),t('52.49')] },
-  { setId:'nj-state-scy', ag:'15-16', g:'M', ev:'200fly',    times:[t('2:11.09'),t('2:01.09')] },
-  { setId:'nj-state-scy', ag:'15-16', g:'M', ev:'200im',     times:[t('2:00.09'),t('1:51.09')] },
-  { setId:'nj-state-scy', ag:'15-16', g:'M', ev:'400im',     times:[t('4:13.09'),t('3:53.09')] },
-  // ── Girls 17-18 ──────────────────────────────────────────────────────────────
-  { setId:'nj-state-scy', ag:'17-18', g:'F', ev:'50free',    times:[t('25.09'),t('23.09')] },
-  { setId:'nj-state-scy', ag:'17-18', g:'F', ev:'100free',   times:[t('54.49'),t('50.49')] },
-  { setId:'nj-state-scy', ag:'17-18', g:'F', ev:'200free',   times:[t('1:57.59'),t('1:49.49')] },
-  { setId:'nj-state-scy', ag:'17-18', g:'F', ev:'500free',   times:[t('5:21.09'),t('4:57.09')] },
-  { setId:'nj-state-scy', ag:'17-18', g:'F', ev:'100back',   times:[t('1:01.09'),t('56.49')] },
-  { setId:'nj-state-scy', ag:'17-18', g:'F', ev:'200back',   times:[t('2:11.09'),t('2:01.59')] },
-  { setId:'nj-state-scy', ag:'17-18', g:'F', ev:'100breast', times:[t('1:04.09'),t('58.99')] },
-  { setId:'nj-state-scy', ag:'17-18', g:'F', ev:'200breast', times:[t('2:19.59'),t('2:08.89')] },
-  { setId:'nj-state-scy', ag:'17-18', g:'F', ev:'100fly',    times:[t('1:01.09'),t('56.19')] },
-  { setId:'nj-state-scy', ag:'17-18', g:'F', ev:'200fly',    times:[t('2:18.89'),t('2:08.09')] },
-  { setId:'nj-state-scy', ag:'17-18', g:'F', ev:'200im',     times:[t('2:09.29'),t('1:59.59')] },
-  { setId:'nj-state-scy', ag:'17-18', g:'F', ev:'400im',     times:[t('4:31.09'),t('4:10.29')] },
-  // ── Boys 17-18 ───────────────────────────────────────────────────────────────
-  { setId:'nj-state-scy', ag:'17-18', g:'M', ev:'50free',    times:[t('21.49'),t('19.79')] },
-  { setId:'nj-state-scy', ag:'17-18', g:'M', ev:'100free',   times:[t('46.69'),t('43.19')] },
-  { setId:'nj-state-scy', ag:'17-18', g:'M', ev:'200free',   times:[t('1:41.59'),t('1:34.09')] },
-  { setId:'nj-state-scy', ag:'17-18', g:'M', ev:'500free',   times:[t('4:40.09'),t('4:18.59')] },
-  { setId:'nj-state-scy', ag:'17-18', g:'M', ev:'100back',   times:[t('52.79'),t('48.89')] },
-  { setId:'nj-state-scy', ag:'17-18', g:'M', ev:'200back',   times:[t('1:53.29'),t('1:44.89')] },
-  { setId:'nj-state-scy', ag:'17-18', g:'M', ev:'100breast', times:[t('57.49'),t('53.09')] },
-  { setId:'nj-state-scy', ag:'17-18', g:'M', ev:'200breast', times:[t('2:04.09'),t('1:55.09')] },
-  { setId:'nj-state-scy', ag:'17-18', g:'M', ev:'100fly',    times:[t('52.39'),t('48.59')] },
-  { setId:'nj-state-scy', ag:'17-18', g:'M', ev:'200fly',    times:[t('2:03.59'),t('1:54.39')] },
-  { setId:'nj-state-scy', ag:'17-18', g:'M', ev:'200im',     times:[t('1:52.09'),t('1:44.09')] },
-  { setId:'nj-state-scy', ag:'17-18', g:'M', ev:'400im',     times:[t('3:58.09'),t('3:39.89')] },
-];
-
-// ─────────────────────────────────────────────────────────────────────────────
-// EASTERN ZONE SCY — single EZ qualifying time (levels index: 0=EZ)
-// ─────────────────────────────────────────────────────────────────────────────
-const EASTERN_ZONE: RawRow[] = [
-  // ── Girls 11-12 ──────────────────────────────────────────────────────────────
-  { setId:'eastern-zone-scy', ag:'11-12', g:'F', ev:'50free',    times:[t('29.19')] },
-  { setId:'eastern-zone-scy', ag:'11-12', g:'F', ev:'100free',   times:[t('1:03.29')] },
-  { setId:'eastern-zone-scy', ag:'11-12', g:'F', ev:'200free',   times:[t('2:17.09')] },
-  { setId:'eastern-zone-scy', ag:'11-12', g:'F', ev:'100back',   times:[t('1:10.09')] },
-  { setId:'eastern-zone-scy', ag:'11-12', g:'F', ev:'200back',   times:[t('2:32.09')] },
-  { setId:'eastern-zone-scy', ag:'11-12', g:'F', ev:'100breast', times:[t('1:18.09')] },
-  { setId:'eastern-zone-scy', ag:'11-12', g:'F', ev:'200breast', times:[t('2:50.09')] },
-  { setId:'eastern-zone-scy', ag:'11-12', g:'F', ev:'100fly',    times:[t('1:10.09')] },
-  { setId:'eastern-zone-scy', ag:'11-12', g:'F', ev:'200fly',    times:[t('2:41.59')] },
-  { setId:'eastern-zone-scy', ag:'11-12', g:'F', ev:'200im',     times:[t('2:21.09')] },
-  { setId:'eastern-zone-scy', ag:'11-12', g:'F', ev:'400im',     times:[t('5:00.09')] },
-  // ── Boys 11-12 ───────────────────────────────────────────────────────────────
-  { setId:'eastern-zone-scy', ag:'11-12', g:'M', ev:'50free',    times:[t('29.19')] },
-  { setId:'eastern-zone-scy', ag:'11-12', g:'M', ev:'100free',   times:[t('1:04.09')] },
-  { setId:'eastern-zone-scy', ag:'11-12', g:'M', ev:'200free',   times:[t('2:21.09')] },
-  { setId:'eastern-zone-scy', ag:'11-12', g:'M', ev:'100back',   times:[t('1:12.79')] },
-  { setId:'eastern-zone-scy', ag:'11-12', g:'M', ev:'200back',   times:[t('2:36.09')] },
-  { setId:'eastern-zone-scy', ag:'11-12', g:'M', ev:'100breast', times:[t('1:19.79')] },
-  { setId:'eastern-zone-scy', ag:'11-12', g:'M', ev:'200breast', times:[t('2:55.09')] },
-  { setId:'eastern-zone-scy', ag:'11-12', g:'M', ev:'100fly',    times:[t('1:12.79')] },
-  { setId:'eastern-zone-scy', ag:'11-12', g:'M', ev:'200fly',    times:[t('2:46.09')] },
-  { setId:'eastern-zone-scy', ag:'11-12', g:'M', ev:'200im',     times:[t('2:24.79')] },
-  { setId:'eastern-zone-scy', ag:'11-12', g:'M', ev:'400im',     times:[t('5:07.09')] },
-  // ── Girls 13-14 ──────────────────────────────────────────────────────────────
-  { setId:'eastern-zone-scy', ag:'13-14', g:'F', ev:'50free',    times:[t('25.89')] },
-  { setId:'eastern-zone-scy', ag:'13-14', g:'F', ev:'100free',   times:[t('55.99')] },
-  { setId:'eastern-zone-scy', ag:'13-14', g:'F', ev:'200free',   times:[t('2:01.59')] },
-  { setId:'eastern-zone-scy', ag:'13-14', g:'F', ev:'100back',   times:[t('1:02.39')] },
-  { setId:'eastern-zone-scy', ag:'13-14', g:'F', ev:'200back',   times:[t('2:14.09')] },
-  { setId:'eastern-zone-scy', ag:'13-14', g:'F', ev:'100breast', times:[t('1:06.59')] },
-  { setId:'eastern-zone-scy', ag:'13-14', g:'F', ev:'200breast', times:[t('2:23.09')] },
-  { setId:'eastern-zone-scy', ag:'13-14', g:'F', ev:'100fly',    times:[t('1:02.09')] },
-  { setId:'eastern-zone-scy', ag:'13-14', g:'F', ev:'200fly',    times:[t('2:20.39')] },
-  { setId:'eastern-zone-scy', ag:'13-14', g:'F', ev:'200im',     times:[t('2:09.09')] },
-  { setId:'eastern-zone-scy', ag:'13-14', g:'F', ev:'400im',     times:[t('4:31.09')] },
-  // ── Boys 13-14 ───────────────────────────────────────────────────────────────
-  { setId:'eastern-zone-scy', ag:'13-14', g:'M', ev:'50free',    times:[t('23.59')] },
-  { setId:'eastern-zone-scy', ag:'13-14', g:'M', ev:'100free',   times:[t('52.89')] },
-  { setId:'eastern-zone-scy', ag:'13-14', g:'M', ev:'200free',   times:[t('1:55.39')] },
-  { setId:'eastern-zone-scy', ag:'13-14', g:'M', ev:'100back',   times:[t('58.79')] },
-  { setId:'eastern-zone-scy', ag:'13-14', g:'M', ev:'200back',   times:[t('2:07.09')] },
-  { setId:'eastern-zone-scy', ag:'13-14', g:'M', ev:'100breast', times:[t('1:04.09')] },
-  { setId:'eastern-zone-scy', ag:'13-14', g:'M', ev:'200breast', times:[t('2:17.09')] },
-  { setId:'eastern-zone-scy', ag:'13-14', g:'M', ev:'100fly',    times:[t('58.79')] },
-  { setId:'eastern-zone-scy', ag:'13-14', g:'M', ev:'200fly',    times:[t('2:13.79')] },
-  { setId:'eastern-zone-scy', ag:'13-14', g:'M', ev:'200im',     times:[t('2:02.19')] },
-  { setId:'eastern-zone-scy', ag:'13-14', g:'M', ev:'400im',     times:[t('4:15.59')] },
-  // ── Girls 15-16 ──────────────────────────────────────────────────────────────
-  { setId:'eastern-zone-scy', ag:'15-16', g:'F', ev:'50free',    times:[t('24.19')] },
-  { setId:'eastern-zone-scy', ag:'15-16', g:'F', ev:'100free',   times:[t('52.99')] },
-  { setId:'eastern-zone-scy', ag:'15-16', g:'F', ev:'200free',   times:[t('1:54.49')] },
-  { setId:'eastern-zone-scy', ag:'15-16', g:'F', ev:'100back',   times:[t('59.39')] },
-  { setId:'eastern-zone-scy', ag:'15-16', g:'F', ev:'200back',   times:[t('2:07.09')] },
-  { setId:'eastern-zone-scy', ag:'15-16', g:'F', ev:'100breast', times:[t('1:04.59')] },
-  { setId:'eastern-zone-scy', ag:'15-16', g:'F', ev:'200breast', times:[t('2:19.09')] },
-  { setId:'eastern-zone-scy', ag:'15-16', g:'F', ev:'100fly',    times:[t('59.19')] },
-  { setId:'eastern-zone-scy', ag:'15-16', g:'F', ev:'200fly',    times:[t('2:13.09')] },
-  { setId:'eastern-zone-scy', ag:'15-16', g:'F', ev:'200im',     times:[t('2:03.09')] },
-  { setId:'eastern-zone-scy', ag:'15-16', g:'F', ev:'400im',     times:[t('4:21.09')] },
-  // ── Boys 15-16 ───────────────────────────────────────────────────────────────
-  { setId:'eastern-zone-scy', ag:'15-16', g:'M', ev:'50free',    times:[t('21.49')] },
-  { setId:'eastern-zone-scy', ag:'15-16', g:'M', ev:'100free',   times:[t('47.19')] },
-  { setId:'eastern-zone-scy', ag:'15-16', g:'M', ev:'200free',   times:[t('1:43.09')] },
-  { setId:'eastern-zone-scy', ag:'15-16', g:'M', ev:'100back',   times:[t('53.39')] },
-  { setId:'eastern-zone-scy', ag:'15-16', g:'M', ev:'200back',   times:[t('1:55.09')] },
-  { setId:'eastern-zone-scy', ag:'15-16', g:'M', ev:'100breast', times:[t('59.29')] },
-  { setId:'eastern-zone-scy', ag:'15-16', g:'M', ev:'200breast', times:[t('2:08.09')] },
-  { setId:'eastern-zone-scy', ag:'15-16', g:'M', ev:'100fly',    times:[t('53.09')] },
-  { setId:'eastern-zone-scy', ag:'15-16', g:'M', ev:'200fly',    times:[t('2:00.09')] },
-  { setId:'eastern-zone-scy', ag:'15-16', g:'M', ev:'200im',     times:[t('1:53.39')] },
-  { setId:'eastern-zone-scy', ag:'15-16', g:'M', ev:'400im',     times:[t('4:01.09')] },
-  // ── Girls 17-18 ──────────────────────────────────────────────────────────────
-  { setId:'eastern-zone-scy', ag:'17-18', g:'F', ev:'50free',    times:[t('23.79')] },
-  { setId:'eastern-zone-scy', ag:'17-18', g:'F', ev:'100free',   times:[t('52.19')] },
-  { setId:'eastern-zone-scy', ag:'17-18', g:'F', ev:'200free',   times:[t('1:52.89')] },
-  { setId:'eastern-zone-scy', ag:'17-18', g:'F', ev:'100back',   times:[t('58.79')] },
-  { setId:'eastern-zone-scy', ag:'17-18', g:'F', ev:'200back',   times:[t('2:05.49')] },
-  { setId:'eastern-zone-scy', ag:'17-18', g:'F', ev:'100breast', times:[t('1:03.89')] },
-  { setId:'eastern-zone-scy', ag:'17-18', g:'F', ev:'200breast', times:[t('2:17.09')] },
-  { setId:'eastern-zone-scy', ag:'17-18', g:'F', ev:'100fly',    times:[t('58.59')] },
-  { setId:'eastern-zone-scy', ag:'17-18', g:'F', ev:'200fly',    times:[t('2:11.09')] },
-  { setId:'eastern-zone-scy', ag:'17-18', g:'F', ev:'200im',     times:[t('2:05.59')] },
-  { setId:'eastern-zone-scy', ag:'17-18', g:'F', ev:'400im',     times:[t('4:26.09')] },
-  // ── Boys 17-18 ───────────────────────────────────────────────────────────────
-  { setId:'eastern-zone-scy', ag:'17-18', g:'M', ev:'50free',    times:[t('20.99')] },
-  { setId:'eastern-zone-scy', ag:'17-18', g:'M', ev:'100free',   times:[t('46.19')] },
-  { setId:'eastern-zone-scy', ag:'17-18', g:'M', ev:'200free',   times:[t('1:41.49')] },
-  { setId:'eastern-zone-scy', ag:'17-18', g:'M', ev:'100back',   times:[t('52.39')] },
-  { setId:'eastern-zone-scy', ag:'17-18', g:'M', ev:'200back',   times:[t('1:52.09')] },
-  { setId:'eastern-zone-scy', ag:'17-18', g:'M', ev:'100breast', times:[t('58.09')] },
-  { setId:'eastern-zone-scy', ag:'17-18', g:'M', ev:'200breast', times:[t('2:05.49')] },
-  { setId:'eastern-zone-scy', ag:'17-18', g:'M', ev:'100fly',    times:[t('52.09')] },
-  { setId:'eastern-zone-scy', ag:'17-18', g:'M', ev:'200fly',    times:[t('1:59.59')] },
-  { setId:'eastern-zone-scy', ag:'17-18', g:'M', ev:'200im',     times:[t('1:51.39')] },
-  { setId:'eastern-zone-scy', ag:'17-18', g:'M', ev:'400im',     times:[t('3:58.09')] },
-];
-
-// ─────────────────────────────────────────────────────────────────────────────
-// Build master STANDARDS array
-// ─────────────────────────────────────────────────────────────────────────────
-const ALL_RAW: RawRow[] = [...SCY_2425, ...SCY_2526, ...LCM_2425, ...LCM_2526, ...NJ_STATE, ...EASTERN_ZONE];
-
-export const STANDARDS: StandardEntry[] = ALL_RAW.flatMap(row => {
-  const set = STANDARD_SETS.find(s => s.id === row.setId);
-  if (!set) return [];
-  return row.times.map((timeHundredths, i) => ({
-    setId: row.setId,
-    ageGroup: row.ag,
-    gender: row.g,
-    courseType: set.courseType,
-    eventId: row.ev,
-    level: set.levels[i].level,
-    timeHundredths,
-    season: set.season,
-  }));
-});
-
-// ─────────────────────────────────────────────────────────────────────────────
-// Lookup helpers
-// ─────────────────────────────────────────────────────────────────────────────
-export function getStandard(
-  setId: string,
-  ageGroup: AgeGroup,
-  gender: Gender,
-  eventId: string,
-  level: StandardLevel,
-): StandardEntry | undefined {
-  return STANDARDS.find(
-    s => s.setId === setId && s.ageGroup === ageGroup && s.gender === gender && s.eventId === eventId && s.level === level
-  );
-}
-
-export function getStandardSet(id: string): StandardSet | undefined {
-  return STANDARD_SETS.find(s => s.id === id);
-}
-
-export function getStandardsForEvent(
-  setId: string,
-  ageGroup: AgeGroup,
-  gender: Gender,
-  eventId: string,
-): Partial<Record<StandardLevel, number>> {
-  const set = getStandardSet(setId);
-  if (!set) return {};
-  const result: Partial<Record<StandardLevel, number>> = {};
-  set.levels.forEach(({ level }) => {
-    const entry = getStandard(setId, ageGroup, gender, eventId, level);
-    if (entry) result[level] = entry.timeHundredths;
-  });
-  return result;
+// ─── Lookup ───────────────────────────────────────────────────────────────────
+export function get2026Times(ageGroup: AgeGroup, gender: Gender, eventId: string): StandardTimes {
+  return STANDARDS_2026[eventId]?.[ageGroup]?.[gender] ?? { silver: null, gold: null, zone: null };
 }

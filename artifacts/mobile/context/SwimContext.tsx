@@ -1,22 +1,15 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import React, { createContext, useCallback, useContext, useEffect, useState } from 'react';
 
-import type { AgeGroup, CourseType, Gender, StandardLevel } from '@/constants/standards';
-import {
-  DEFAULT_STANDARD_LEVEL,
-  DEFAULT_STANDARD_SET_ID,
-  STANDARD_SETS,
-  getStandard,
-  getStandardSet,
-} from '@/constants/standards';
-import { generateId } from '@/utils/timeUtils';
+import type { AgeGroup, Gender, StandardTimes } from '@/constants/standards';
+import { get2026Times } from '@/constants/standards';
+import { birthYearToAgeGroup, generateId } from '@/utils/timeUtils';
 
 export interface Swimmer {
   id: string;
   name: string;
   gender: Gender;
   birthYear: number;
-  ageGroup: AgeGroup;
 }
 
 export interface Meet {
@@ -24,7 +17,6 @@ export interface Meet {
   name: string;
   date: string;
   location: string;
-  courseType: CourseType;
 }
 
 export interface TimeEntry {
@@ -41,9 +33,6 @@ interface SwimContextType {
   meets: Meet[];
   timeEntries: TimeEntry[];
   selectedSwimmerId: string | null;
-  selectedStandardSetId: string;
-  selectedStandardLevel: StandardLevel;
-  selectedCourseType: CourseType;
   isLoaded: boolean;
 
   addSwimmer: (swimmer: Omit<Swimmer, 'id'>) => Promise<void>;
@@ -54,40 +43,28 @@ interface SwimContextType {
   deleteTimeEntry: (id: string) => Promise<void>;
 
   setSelectedSwimmerId: (id: string | null) => Promise<void>;
-  setSelectedStandardSetId: (setId: string) => Promise<void>;
-  setSelectedStandardLevel: (level: StandardLevel) => Promise<void>;
 
+  getSwimmerAgeGroup: (swimmer: Swimmer) => AgeGroup;
   getBestTimeForEvent: (swimmerId: string, eventId: string) => TimeEntry | null;
-  getDeltaToStandard: (swimmerId: string, eventId: string, level?: StandardLevel, setId?: string) => number | null;
-  getStandardTime: (swimmerId: string, eventId: string, level?: StandardLevel, setId?: string) => number | null;
+  getStandardTimes: (swimmerId: string, eventId: string) => StandardTimes;
   getSelectedSwimmer: () => Swimmer | null;
 }
 
 const SwimContext = createContext<SwimContextType | null>(null);
 
 const KEYS = {
-  swimmers: '@swim_swimmers',
-  meets: '@swim_meets',
+  swimmers:    '@swim_swimmers',
+  meets:       '@swim_meets',
   timeEntries: '@swim_time_entries',
-  settings: '@swim_settings_v2',
+  settings:    '@swim_settings_v3',
 };
-
-interface Settings {
-  selectedSwimmerId: string | null;
-  selectedStandardSetId: string;
-  selectedStandardLevel: StandardLevel;
-}
 
 export function SwimProvider({ children }: { children: React.ReactNode }) {
   const [swimmers, setSwimmers] = useState<Swimmer[]>([]);
   const [meets, setMeets] = useState<Meet[]>([]);
   const [timeEntries, setTimeEntries] = useState<TimeEntry[]>([]);
   const [selectedSwimmerId, setSelectedSwimmerIdState] = useState<string | null>(null);
-  const [selectedStandardSetId, setSelectedStandardSetIdState] = useState<string>(DEFAULT_STANDARD_SET_ID);
-  const [selectedStandardLevel, setSelectedStandardLevelState] = useState<StandardLevel>(DEFAULT_STANDARD_LEVEL);
   const [isLoaded, setIsLoaded] = useState(false);
-
-  const selectedCourseType: CourseType = getStandardSet(selectedStandardSetId)?.courseType ?? 'SCY';
 
   useEffect(() => { loadAll(); }, []);
 
@@ -103,10 +80,8 @@ export function SwimProvider({ children }: { children: React.ReactNode }) {
       if (mt) setMeets(JSON.parse(mt));
       if (te) setTimeEntries(JSON.parse(te));
       if (st) {
-        const s: Settings = JSON.parse(st);
+        const s = JSON.parse(st);
         if (s.selectedSwimmerId !== undefined) setSelectedSwimmerIdState(s.selectedSwimmerId);
-        if (s.selectedStandardSetId) setSelectedStandardSetIdState(s.selectedStandardSetId);
-        if (s.selectedStandardLevel) setSelectedStandardLevelState(s.selectedStandardLevel);
       }
     } catch (e) {
       console.warn('Failed to load swim data:', e);
@@ -115,24 +90,18 @@ export function SwimProvider({ children }: { children: React.ReactNode }) {
     }
   }
 
-  async function persistSettings(overrides: Partial<Settings>) {
-    const current: Settings = {
-      selectedSwimmerId,
-      selectedStandardSetId,
-      selectedStandardLevel,
-      ...overrides,
-    };
-    await AsyncStorage.setItem(KEYS.settings, JSON.stringify(current));
+  async function persistSettings(swimmerId: string | null) {
+    await AsyncStorage.setItem(KEYS.settings, JSON.stringify({ selectedSwimmerId: swimmerId }));
   }
 
   const addSwimmer = useCallback(async (swimmer: Omit<Swimmer, 'id'>) => {
-    const newSwimmer: Swimmer = { ...swimmer, id: generateId() };
-    const next = [...swimmers, newSwimmer];
+    const s: Swimmer = { ...swimmer, id: generateId() };
+    const next = [...swimmers, s];
     setSwimmers(next);
     await AsyncStorage.setItem(KEYS.swimmers, JSON.stringify(next));
     if (!selectedSwimmerId) {
-      setSelectedSwimmerIdState(newSwimmer.id);
-      await persistSettings({ selectedSwimmerId: newSwimmer.id });
+      setSelectedSwimmerIdState(s.id);
+      await persistSettings(s.id);
     }
   }, [swimmers, selectedSwimmerId]);
 
@@ -149,21 +118,21 @@ export function SwimProvider({ children }: { children: React.ReactNode }) {
     if (selectedSwimmerId === id) {
       const newSel = next[0]?.id ?? null;
       setSelectedSwimmerIdState(newSel);
-      await persistSettings({ selectedSwimmerId: newSel });
+      await persistSettings(newSel);
     }
   }, [swimmers, selectedSwimmerId]);
 
   const addMeet = useCallback(async (meet: Omit<Meet, 'id'>): Promise<Meet> => {
-    const newMeet: Meet = { ...meet, id: generateId() };
-    const next = [...meets, newMeet];
+    const m: Meet = { ...meet, id: generateId() };
+    const next = [...meets, m];
     setMeets(next);
     await AsyncStorage.setItem(KEYS.meets, JSON.stringify(next));
-    return newMeet;
+    return m;
   }, [meets]);
 
   const addTimeEntry = useCallback(async (entry: Omit<TimeEntry, 'id' | 'date'>) => {
-    const newEntry: TimeEntry = { ...entry, id: generateId(), date: new Date().toISOString() };
-    const next = [...timeEntries, newEntry];
+    const e: TimeEntry = { ...entry, id: generateId(), date: new Date().toISOString() };
+    const next = [...timeEntries, e];
     setTimeEntries(next);
     await AsyncStorage.setItem(KEYS.timeEntries, JSON.stringify(next));
   }, [timeEntries]);
@@ -176,24 +145,12 @@ export function SwimProvider({ children }: { children: React.ReactNode }) {
 
   const setSelectedSwimmerId = useCallback(async (id: string | null) => {
     setSelectedSwimmerIdState(id);
-    await persistSettings({ selectedSwimmerId: id });
-  }, [selectedStandardSetId, selectedStandardLevel]);
+    await persistSettings(id);
+  }, []);
 
-  const setSelectedStandardSetId = useCallback(async (setId: string) => {
-    const set = STANDARD_SETS.find(s => s.id === setId);
-    if (!set) return;
-    setSelectedStandardSetIdState(setId);
-    // Auto-reset level to first valid if current level isn't in this set
-    const levelValid = set.levels.some(l => l.level === selectedStandardLevel);
-    const newLevel = levelValid ? selectedStandardLevel : set.levels[0].level;
-    setSelectedStandardLevelState(newLevel);
-    await persistSettings({ selectedStandardSetId: setId, selectedStandardLevel: newLevel });
-  }, [selectedSwimmerId, selectedStandardLevel]);
-
-  const setSelectedStandardLevel = useCallback(async (level: StandardLevel) => {
-    setSelectedStandardLevelState(level);
-    await persistSettings({ selectedStandardLevel: level });
-  }, [selectedSwimmerId, selectedStandardSetId]);
+  const getSwimmerAgeGroup = useCallback((swimmer: Swimmer): AgeGroup => {
+    return birthYearToAgeGroup(swimmer.birthYear);
+  }, []);
 
   const getBestTimeForEvent = useCallback((swimmerId: string, eventId: string): TimeEntry | null => {
     const entries = timeEntries.filter(e => e.swimmerId === swimmerId && e.eventId === eventId);
@@ -201,36 +158,12 @@ export function SwimProvider({ children }: { children: React.ReactNode }) {
     return entries.reduce((best, cur) => cur.timeHundredths < best.timeHundredths ? cur : best);
   }, [timeEntries]);
 
-  const getDeltaToStandard = useCallback((
-    swimmerId: string,
-    eventId: string,
-    level?: StandardLevel,
-    setId?: string,
-  ): number | null => {
+  const getStandardTimes = useCallback((swimmerId: string, eventId: string): StandardTimes => {
     const swimmer = swimmers.find(s => s.id === swimmerId);
-    if (!swimmer) return null;
-    const lvl = level ?? selectedStandardLevel;
-    const sid = setId ?? selectedStandardSetId;
-    const standard = getStandard(sid, swimmer.ageGroup, swimmer.gender, eventId, lvl);
-    if (!standard) return null;
-    const best = getBestTimeForEvent(swimmerId, eventId);
-    if (!best) return null;
-    return best.timeHundredths - standard.timeHundredths;
-  }, [swimmers, selectedStandardLevel, selectedStandardSetId, getBestTimeForEvent]);
-
-  const getStandardTime = useCallback((
-    swimmerId: string,
-    eventId: string,
-    level?: StandardLevel,
-    setId?: string,
-  ): number | null => {
-    const swimmer = swimmers.find(s => s.id === swimmerId);
-    if (!swimmer) return null;
-    const lvl = level ?? selectedStandardLevel;
-    const sid = setId ?? selectedStandardSetId;
-    const standard = getStandard(sid, swimmer.ageGroup, swimmer.gender, eventId, lvl);
-    return standard?.timeHundredths ?? null;
-  }, [swimmers, selectedStandardLevel, selectedStandardSetId]);
+    if (!swimmer) return { silver: null, gold: null, zone: null };
+    const ageGroup = birthYearToAgeGroup(swimmer.birthYear);
+    return get2026Times(ageGroup, swimmer.gender, eventId);
+  }, [swimmers]);
 
   const getSelectedSwimmer = useCallback((): Swimmer | null => {
     if (!selectedSwimmerId) return null;
@@ -240,12 +173,11 @@ export function SwimProvider({ children }: { children: React.ReactNode }) {
   return (
     <SwimContext.Provider value={{
       swimmers, meets, timeEntries,
-      selectedSwimmerId, selectedStandardSetId, selectedStandardLevel, selectedCourseType,
-      isLoaded,
+      selectedSwimmerId, isLoaded,
       addSwimmer, updateSwimmer, deleteSwimmer,
       addMeet, addTimeEntry, deleteTimeEntry,
-      setSelectedSwimmerId, setSelectedStandardSetId, setSelectedStandardLevel,
-      getBestTimeForEvent, getDeltaToStandard, getStandardTime, getSelectedSwimmer,
+      setSelectedSwimmerId,
+      getSwimmerAgeGroup, getBestTimeForEvent, getStandardTimes, getSelectedSwimmer,
     }}>
       {children}
     </SwimContext.Provider>

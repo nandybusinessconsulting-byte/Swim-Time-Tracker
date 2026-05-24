@@ -1,3 +1,5 @@
+import type { AgeGroup } from '@/constants/standards';
+
 export function parseTimeToHundredths(timeStr: string): number | null {
   const trimmed = timeStr.trim().replace(/\s/g, '');
 
@@ -53,19 +55,12 @@ export function getDeltaStatus(deltaHundredths: number): DeltaStatus {
   return 'far';
 }
 
-export function ageToAgeGroup(age: number): string {
-  if (age <= 8) return '8U';
-  if (age <= 10) return '9-10';
+export function birthYearToAgeGroup(birthYear: number): AgeGroup {
+  const age = new Date().getFullYear() - birthYear;
+  if (age <= 10) return '10&U';
   if (age <= 12) return '11-12';
   if (age <= 14) return '13-14';
-  if (age <= 16) return '15-16';
-  return '17-18';
-}
-
-export function birthYearToAgeGroup(birthYear: number): string {
-  const currentYear = new Date().getFullYear();
-  const age = currentYear - birthYear;
-  return ageToAgeGroup(age);
+  return '15-18';
 }
 
 export function generateId(): string {
