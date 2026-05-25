@@ -1,5 +1,4 @@
 import { Feather } from '@expo/vector-icons';
-import * as ImagePicker from 'expo-image-picker';
 import { Image } from 'expo-image';
 import React, { useMemo, useState } from 'react';
 import {
@@ -7,12 +6,12 @@ import {
   ScrollView,
   StyleSheet,
   Text,
-  TextInput,
   TouchableOpacity,
   View,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
+import { EditProfileSheet } from '@/components/EditProfileSheet';
 import { LineChart } from '@/components/LineChart';
 import { EVENTS, STROKE_COLORS } from '@/constants/events';
 import { useSwim } from '@/context/SwimContext';
@@ -29,8 +28,7 @@ export default function ProfileScreen() {
     getEntriesForEvent, getStandardTimes,
   } = useSwim();
 
-  const [editing, setEditing] = useState(false);
-  const [draft, setDraft] = useState(profile);
+  const [editSheetOpen, setEditSheetOpen] = useState(false);
   const [selectedEventId, setSelectedEventId] = useState<string | null>(null);
 
   const webTop = Platform.OS === 'web' ? 67 : 0;
@@ -69,32 +67,17 @@ export default function ProfileScreen() {
   const selectedEvent = EVENTS.find(e => e.id === selectedEventId);
   const strokeColor = selectedEvent ? STROKE_COLORS[selectedEvent.stroke] : colors.primary;
 
-  async function pickPhoto() {
-    const result = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: ['images'],
-      allowsEditing: true,
-      aspect: [1, 1],
-      quality: 0.8,
-    });
-    if (!result.canceled && result.assets[0]) {
-      setDraft(d => ({ ...d, photoUri: result.assets[0].uri }));
-    }
-  }
-
-  function saveProfile() {
-    setProfile(draft);
-    setEditing(false);
-  }
-
-  function cancelEdit() {
-    setDraft(profile);
-    setEditing(false);
-  }
-
   const hasProfile = profile.name.trim().length > 0;
 
   return (
     <View style={[styles.container, { backgroundColor: colors.background }]}>
+      <EditProfileSheet
+        visible={editSheetOpen}
+        initial={profile}
+        onSave={setProfile}
+        onClose={() => setEditSheetOpen(false)}
+      />
+
       {/* Header */}
       <View style={[styles.header, {
         backgroundColor: colors.card,
@@ -102,7 +85,7 @@ export default function ProfileScreen() {
         paddingTop: insets.top + webTop + 8,
       }]}>
         <Text style={[styles.pageTitle, { color: colors.foreground }]}>Profile</Text>
-        <TouchableOpacity onPress={() => { setDraft(profile); setEditing(true); }} style={styles.editBtn}>
+        <TouchableOpacity onPress={() => setEditSheetOpen(true)} style={styles.editBtn}>
           <Feather name="edit-2" size={18} color={colors.primary} />
         </TouchableOpacity>
       </View>
@@ -113,67 +96,23 @@ export default function ProfileScreen() {
         showsVerticalScrollIndicator={false}
       >
         {/* Profile card */}
-        <View style={[styles.profileCard, { backgroundColor: colors.card, borderColor: colors.border }]}>
-          <TouchableOpacity onPress={editing ? pickPhoto : undefined} style={styles.avatarWrap}>
-            {(editing ? draft.photoUri : profile.photoUri) ? (
-              <Image
-                source={{ uri: editing ? draft.photoUri! : profile.photoUri! }}
-                style={styles.avatar}
-                contentFit="cover"
-              />
+        <TouchableOpacity
+          style={[styles.profileCard, { backgroundColor: colors.card, borderColor: colors.border }]}
+          onPress={() => setEditSheetOpen(true)}
+          activeOpacity={0.8}
+        >
+          <View style={styles.avatarWrap}>
+            {profile.photoUri ? (
+              <Image source={{ uri: profile.photoUri }} style={styles.avatar} contentFit="cover" />
             ) : (
               <View style={[styles.avatarPlaceholder, { backgroundColor: colors.primary + '22' }]}>
                 <Feather name="user" size={36} color={colors.primary} />
               </View>
             )}
-            {editing && (
-              <View style={[styles.avatarOverlay, { backgroundColor: '#000A' }]}>
-                <Feather name="camera" size={18} color="#FFF" />
-              </View>
-            )}
-          </TouchableOpacity>
+          </View>
 
           <View style={styles.profileInfo}>
-            {editing ? (
-              <>
-                <TextInput
-                  style={[styles.nameInput, { color: colors.foreground, borderBottomColor: colors.border }]}
-                  placeholder="Swimmer name"
-                  placeholderTextColor={colors.mutedForeground}
-                  value={draft.name}
-                  onChangeText={v => setDraft(d => ({ ...d, name: v }))}
-                />
-                <TextInput
-                  style={[styles.subInput, { color: colors.foreground, borderBottomColor: colors.border }]}
-                  placeholder="Club / Team"
-                  placeholderTextColor={colors.mutedForeground}
-                  value={draft.club}
-                  onChangeText={v => setDraft(d => ({ ...d, club: v }))}
-                />
-                <TextInput
-                  style={[styles.subInput, { color: colors.foreground, borderBottomColor: colors.border }]}
-                  placeholder="USA Swimming ID"
-                  placeholderTextColor={colors.mutedForeground}
-                  value={draft.usaSwimmingId}
-                  onChangeText={v => setDraft(d => ({ ...d, usaSwimmingId: v }))}
-                  autoCapitalize="none"
-                />
-                <View style={styles.editActions}>
-                  <TouchableOpacity
-                    style={[styles.actionBtn, { backgroundColor: colors.primary }]}
-                    onPress={saveProfile}
-                  >
-                    <Text style={[styles.actionBtnText, { color: '#FFF' }]}>Save</Text>
-                  </TouchableOpacity>
-                  <TouchableOpacity
-                    style={[styles.actionBtn, { backgroundColor: colors.secondary, borderColor: colors.border, borderWidth: 1 }]}
-                    onPress={cancelEdit}
-                  >
-                    <Text style={[styles.actionBtnText, { color: colors.foreground }]}>Cancel</Text>
-                  </TouchableOpacity>
-                </View>
-              </>
-            ) : hasProfile ? (
+            {hasProfile ? (
               <>
                 <Text style={[styles.profileName, { color: colors.foreground }]}>{profile.name}</Text>
                 {!!profile.club && (
@@ -189,12 +128,12 @@ export default function ProfileScreen() {
               <View style={styles.emptyProfile}>
                 <Text style={[styles.emptyProfileTitle, { color: colors.foreground }]}>Set up your profile</Text>
                 <Text style={[styles.emptyProfileSub, { color: colors.mutedForeground }]}>
-                  Tap ✏️ to add your name, club, and USA Swimming ID.
+                  Tap here to add your name, club, and USA Swimming ID.
                 </Text>
               </View>
             )}
           </View>
-        </View>
+        </TouchableOpacity>
 
         {/* Stats row */}
         {eventsWithEntries.length > 0 && (() => {
@@ -361,17 +300,11 @@ const styles = StyleSheet.create({
   avatarWrap: { position: 'relative' },
   avatar: { width: 80, height: 80, borderRadius: 40 },
   avatarPlaceholder: { width: 80, height: 80, borderRadius: 40, alignItems: 'center', justifyContent: 'center' },
-  avatarOverlay: { position: 'absolute', inset: 0, borderRadius: 40, alignItems: 'center', justifyContent: 'center' },
   profileInfo: { flex: 1, gap: 4 },
   profileName: { fontFamily: 'Inter_700Bold', fontSize: 20 },
   profileSub: { fontFamily: 'Inter_400Regular', fontSize: 14 },
   idBadge: { alignSelf: 'flex-start', marginTop: 6, paddingHorizontal: 8, paddingVertical: 3, borderRadius: 6, borderWidth: 1 },
   idText: { fontFamily: 'Inter_400Regular', fontSize: 11 },
-  nameInput: { fontFamily: 'Inter_600SemiBold', fontSize: 18, paddingVertical: 4, borderBottomWidth: 1, marginBottom: 8 },
-  subInput: { fontFamily: 'Inter_400Regular', fontSize: 14, paddingVertical: 4, borderBottomWidth: 1, marginBottom: 8 },
-  editActions: { flexDirection: 'row', gap: 8, marginTop: 8 },
-  actionBtn: { flex: 1, paddingVertical: 8, borderRadius: 10, alignItems: 'center' },
-  actionBtnText: { fontFamily: 'Inter_600SemiBold', fontSize: 14 },
   emptyProfile: { gap: 4 },
   emptyProfileTitle: { fontFamily: 'Inter_600SemiBold', fontSize: 16 },
   emptyProfileSub: { fontFamily: 'Inter_400Regular', fontSize: 13, lineHeight: 18 },
