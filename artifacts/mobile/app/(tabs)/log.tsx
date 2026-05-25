@@ -1,5 +1,6 @@
 import { Feather } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
+import { Image } from 'expo-image';
 import React, { useMemo, useState } from 'react';
 import {
   Platform,
@@ -23,21 +24,31 @@ import {
   parseTimeToHundredths,
 } from '@/utils/timeUtils';
 
+const NJ_LOGO  = require('@/assets/images/nj-swimming-logo.jpg');
+const EZ_LOGO  = require('@/assets/images/eastern-zone-logo.png');
+
 const GENDERS: { value: Gender; label: string }[] = [
   { value: 'F', label: 'Girls' },
   { value: 'M', label: 'Boys' },
 ];
 
 function DeltaRow({
-  label, standardTime, delta, accentColor,
+  label, logo, standardTime, delta, accentColor,
 }: {
-  label: string; standardTime: number | null; delta: number | null; accentColor: string;
+  label: string;
+  logo?: ReturnType<typeof require>;
+  standardTime: number | null;
+  delta: number | null;
+  accentColor: string;
 }) {
   const colors = useColors();
   if (standardTime === null) {
     return (
       <View style={[drStyles.row, { backgroundColor: colors.secondary, borderColor: colors.border }]}>
-        <Text style={[drStyles.label, { color: colors.mutedForeground }]}>{label}</Text>
+        <View style={drStyles.labelRow}>
+          {logo && <Image source={logo} style={drStyles.logo} contentFit="contain" />}
+          <Text style={[drStyles.label, { color: colors.mutedForeground }]}>{label}</Text>
+        </View>
         <Text style={[drStyles.noStd, { color: colors.mutedForeground }]}>No standard for this event / age</Text>
       </View>
     );
@@ -49,7 +60,10 @@ function DeltaRow({
       borderColor: qualified ? accentColor + '55' : colors.border,
     }]}>
       <View style={drStyles.rowLeft}>
-        <Text style={[drStyles.label, { color: qualified ? accentColor : colors.mutedForeground }]}>{label}</Text>
+        <View style={drStyles.labelRow}>
+          {logo && <Image source={logo} style={drStyles.logo} contentFit="contain" />}
+          <Text style={[drStyles.label, { color: qualified ? accentColor : colors.mutedForeground }]}>{label}</Text>
+        </View>
         <Text style={[drStyles.stdTime, { color: colors.mutedForeground }]}>{formatHundredthsToTime(standardTime)}</Text>
       </View>
       {delta !== null ? (
@@ -72,9 +86,11 @@ function DeltaRow({
 const drStyles = StyleSheet.create({
   row: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', borderRadius: 12, borderWidth: 1, paddingHorizontal: 14, paddingVertical: 13 },
   rowLeft: { gap: 2 },
+  labelRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
+  logo: { width: 28, height: 28, borderRadius: 4 },
   rowRight: { alignItems: 'flex-end' },
   label: { fontFamily: 'Inter_600SemiBold', fontSize: 14 },
-  stdTime: { fontFamily: 'Inter_400Regular', fontSize: 12, marginTop: 1 },
+  stdTime: { fontFamily: 'Inter_400Regular', fontSize: 12, marginTop: 1, marginLeft: 36 },
   deltaNum: { fontFamily: 'Inter_700Bold', fontSize: 20 },
   toGo: { fontFamily: 'Inter_400Regular', fontSize: 11, marginTop: 1 },
   qtText: { fontFamily: 'Inter_700Bold', fontSize: 17 },
@@ -282,9 +298,9 @@ export default function LogScreen() {
             </View>
           </View>
           <View style={styles.deltaStack}>
-            {visibleStandards.silver && <DeltaRow label="🥈  NJ Silver cut"     standardTime={std.silver} delta={silverDelta} accentColor="#6B7280" />}
-            {visibleStandards.gold   && <DeltaRow label="🥇  NJ Gold cut"       standardTime={std.gold}   delta={goldDelta}   accentColor="#D97706" />}
-            {visibleStandards.zone   && <DeltaRow label="🌊  Eastern Zone cut"  standardTime={std.zone}   delta={zoneDelta}   accentColor={colors.primary} />}
+            {visibleStandards.silver && <DeltaRow label="NJ Silver cut"    logo={NJ_LOGO} standardTime={std.silver} delta={silverDelta} accentColor="#6B7280" />}
+            {visibleStandards.gold   && <DeltaRow label="NJ Gold cut"      logo={NJ_LOGO} standardTime={std.gold}   delta={goldDelta}   accentColor="#D97706" />}
+            {visibleStandards.zone   && <DeltaRow label="Eastern Zone cut" logo={EZ_LOGO} standardTime={std.zone}   delta={zoneDelta}   accentColor={colors.primary} />}
             {!visibleStandards.silver && !visibleStandards.gold && !visibleStandards.zone && (
               <Text style={[styles.allHiddenText, { color: colors.mutedForeground }]}>Tap a chip above to show standards</Text>
             )}
