@@ -8,6 +8,7 @@ import {
   KeyboardAvoidingView,
   Modal,
   Platform,
+  ScrollView,
   StyleSheet,
   Text,
   TextInput,
@@ -215,7 +216,12 @@ export function EditProfileSheet({ visible, initial, onSave, onClose }: EditProf
           </View>
 
           {/* Body */}
-          <View style={epStyles.body}>
+          <ScrollView
+            style={epStyles.scroll}
+            contentContainerStyle={epStyles.body}
+            keyboardShouldPersistTaps="handled"
+            showsVerticalScrollIndicator={false}
+          >
             {/* Photo */}
             <View style={epStyles.photoRow}>
               <TouchableOpacity onPress={pickPhoto} style={epStyles.photoBtn} activeOpacity={0.8}>
@@ -354,7 +360,7 @@ export function EditProfileSheet({ visible, initial, onSave, onClose }: EditProf
                 </Text>
               )}
             </View>
-          </View>
+          </ScrollView>
         </KeyboardAvoidingView>
       </Modal>
 
@@ -377,7 +383,8 @@ const epStyles = StyleSheet.create({
   title: { fontFamily: 'Inter_600SemiBold', fontSize: 17 },
   cancelText: { fontFamily: 'Inter_400Regular', fontSize: 16 },
   saveText: { fontFamily: 'Inter_600SemiBold', fontSize: 16 },
-  body: { padding: 20, gap: 24 },
+  scroll: { flex: 1 },
+  body: { padding: 20, gap: 24, paddingBottom: 40 },
 
   photoRow: { alignItems: 'center', gap: 8 },
   photoBtn: { position: 'relative' },
