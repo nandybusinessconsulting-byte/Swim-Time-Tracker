@@ -118,17 +118,24 @@ export default function ProfileScreen() {
                 {!!profile.club && (
                   <Text style={[styles.profileSub, { color: colors.mutedForeground }]}>{profile.club}</Text>
                 )}
-                {!!profile.usaSwimmingId && (
-                  <View style={[styles.idBadge, { backgroundColor: colors.secondary, borderColor: colors.border }]}>
-                    <Text style={[styles.idText, { color: colors.mutedForeground }]}>USA ID  {profile.usaSwimmingId}</Text>
-                  </View>
-                )}
+                <View style={styles.badgeRow}>
+                  {!!profile.ageGroup && (
+                    <View style={[styles.idBadge, { backgroundColor: colors.primary + '18', borderColor: colors.primary + '40' }]}>
+                      <Text style={[styles.idText, { color: colors.primary }]}>Age {profile.ageGroup}</Text>
+                    </View>
+                  )}
+                  {!!profile.usaSwimmingId && (
+                    <View style={[styles.idBadge, { backgroundColor: colors.secondary, borderColor: colors.border }]}>
+                      <Text style={[styles.idText, { color: colors.mutedForeground }]}>USA ID  {profile.usaSwimmingId}</Text>
+                    </View>
+                  )}
+                </View>
               </>
             ) : (
               <View style={styles.emptyProfile}>
                 <Text style={[styles.emptyProfileTitle, { color: colors.foreground }]}>Set up your profile</Text>
                 <Text style={[styles.emptyProfileSub, { color: colors.mutedForeground }]}>
-                  Tap here to add your name, club, and USA Swimming ID.
+                  Tap here to add your name, age group, club, and USA Swimming ID.
                 </Text>
               </View>
             )}
@@ -303,7 +310,8 @@ const styles = StyleSheet.create({
   profileInfo: { flex: 1, gap: 4 },
   profileName: { fontFamily: 'Inter_700Bold', fontSize: 20 },
   profileSub: { fontFamily: 'Inter_400Regular', fontSize: 14 },
-  idBadge: { alignSelf: 'flex-start', marginTop: 6, paddingHorizontal: 8, paddingVertical: 3, borderRadius: 6, borderWidth: 1 },
+  badgeRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 6, marginTop: 6 },
+  idBadge: { alignSelf: 'flex-start', paddingHorizontal: 8, paddingVertical: 3, borderRadius: 6, borderWidth: 1 },
   idText: { fontFamily: 'Inter_400Regular', fontSize: 11 },
   emptyProfile: { gap: 4 },
   emptyProfileTitle: { fontFamily: 'Inter_600SemiBold', fontSize: 16 },

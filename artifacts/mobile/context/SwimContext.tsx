@@ -18,6 +18,7 @@ export interface SwimmerProfile {
   club: string;
   usaSwimmingId: string;
   photoUri: string | null;
+  ageGroup: AgeGroup | null;
 }
 
 export interface TimeEntry {
@@ -62,7 +63,7 @@ const KEYS = {
 };
 
 const DEFAULT_VISIBLE: VisibleStandards = { silver: true, gold: true, zone: true };
-const DEFAULT_PROFILE: SwimmerProfile = { name: '', club: '', usaSwimmingId: '', photoUri: null };
+const DEFAULT_PROFILE: SwimmerProfile = { name: '', club: '', usaSwimmingId: '', photoUri: null, ageGroup: null };
 
 export function SwimProvider({ children }: { children: React.ReactNode }) {
   const [timeEntries, setTimeEntries] = useState<TimeEntry[]>([]);
@@ -152,6 +153,10 @@ export function SwimProvider({ children }: { children: React.ReactNode }) {
 
   const setProfile = useCallback((p: SwimmerProfile) => {
     profileRef.current = p; setProfileState(p);
+    if (p.ageGroup) {
+      ageGroupRef.current = p.ageGroup;
+      setAgeGroupState(p.ageGroup);
+    }
     persistSettings(genderRef.current, ageGroupRef.current, courseTypeRef.current, visibleRef.current, p);
   }, []);
 

@@ -18,6 +18,7 @@ import {
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import type { SwimmerProfile } from '@/context/SwimContext';
+import { AGE_GROUPS, type AgeGroup } from '@/constants/standards';
 import { useColors } from '@/hooks/useColors';
 import { NJ_CLUBS, type NJClub } from '@/constants/njClubs';
 
@@ -307,6 +308,26 @@ export function EditProfileSheet({ visible, initial, onSave, onClose }: EditProf
               )}
             </View>
 
+            {/* Age Group */}
+            <View style={epStyles.fieldGroup}>
+              <Text style={[epStyles.fieldLabel, { color: colors.mutedForeground }]}>AGE GROUP</Text>
+              <View style={[epStyles.segRow, { backgroundColor: colors.secondary, borderColor: colors.border }]}>
+                {AGE_GROUPS.map(ag => {
+                  const sel = draft.ageGroup === ag;
+                  return (
+                    <TouchableOpacity
+                      key={ag}
+                      style={[epStyles.segBtn, sel && { backgroundColor: colors.primary }]}
+                      onPress={() => setDraft(d => ({ ...d, ageGroup: ag as AgeGroup }))}
+                      activeOpacity={0.7}
+                    >
+                      <Text style={[epStyles.segText, { color: sel ? '#FFF' : colors.mutedForeground }]}>{ag}</Text>
+                    </TouchableOpacity>
+                  );
+                })}
+              </View>
+            </View>
+
             {/* USA Swimming ID */}
             <View style={epStyles.fieldGroup}>
               <View style={epStyles.labelRow}>
@@ -385,6 +406,9 @@ const epStyles = StyleSheet.create({
   saveText: { fontFamily: 'Inter_600SemiBold', fontSize: 16 },
   scroll: { flex: 1 },
   body: { padding: 20, gap: 24, paddingBottom: 40 },
+  segRow: { flexDirection: 'row', borderRadius: 10, borderWidth: 1, overflow: 'hidden', marginTop: 6 },
+  segBtn: { flex: 1, paddingVertical: 10, alignItems: 'center', justifyContent: 'center' },
+  segText: { fontFamily: 'Inter_600SemiBold', fontSize: 13 },
 
   photoRow: { alignItems: 'center', gap: 8 },
   photoBtn: { position: 'relative' },
