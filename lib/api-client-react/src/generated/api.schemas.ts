@@ -8,3 +8,15 @@
 export interface HealthStatus {
   status: string;
 }
+
+export interface SwimMeet {
+  name: string;
+  location: string;
+  date: string;
+  url: string;
+}
+
+export interface MeetListResponse {
+  meets: SwimMeet[];
+  cachedAt: string;
+}

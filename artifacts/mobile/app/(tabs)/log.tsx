@@ -13,6 +13,7 @@ import {
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
+import { AddMeetSheet } from '@/components/AddMeetSheet';
 import { EVENTS, STROKE_COLORS } from '@/constants/events';
 import { AGE_GROUPS, COURSE_TYPES, get2026Times } from '@/constants/standards';
 import type { AgeGroup, CourseType, Gender } from '@/context/SwimContext';
@@ -24,8 +25,10 @@ import {
   parseTimeToHundredths,
 } from '@/utils/timeUtils';
 
-const NJ_LOGO  = require('@/assets/images/nj-swimming-logo.jpg');
-const EZ_LOGO  = require('@/assets/images/eastern-zone-logo.png');
+// eslint-disable-next-line @typescript-eslint/no-require-imports
+const NJ_LOGO = require('@/assets/images/nj-swimming-logo.jpg') as number;
+// eslint-disable-next-line @typescript-eslint/no-require-imports
+const EZ_LOGO = require('@/assets/images/eastern-zone-logo.png') as number;
 
 const GENDERS: { value: Gender; label: string }[] = [
   { value: 'F', label: 'Girls' },
@@ -36,7 +39,7 @@ function DeltaRow({
   label, logo, standardTime, delta, accentColor,
 }: {
   label: string;
-  logo?: ReturnType<typeof require>;
+  logo?: number;
   standardTime: number | null;
   delta: number | null;
   accentColor: string;
@@ -111,6 +114,8 @@ export default function LogScreen() {
   const [selectedEventId, setSelectedEventId] = useState<string>('50free');
   const [timeInput, setTimeInput] = useState('');
   const [meetName, setMeetName] = useState('');
+  const [meetLocation, setMeetLocation] = useState('');
+  const [meetSheetOpen, setMeetSheetOpen] = useState(false);
   const [saving, setSaving] = useState(false);
 
   const parsedTime = parseTimeToHundredths(timeInput);
@@ -151,6 +156,11 @@ export default function LogScreen() {
 
   return (
     <View style={[styles.container, { backgroundColor: colors.background }]}>
+      <AddMeetSheet
+        visible={meetSheetOpen}
+        onClose={() => setMeetSheetOpen(false)}
+        onCreated={(n, loc) => { setMeetName(n); setMeetLocation(loc); }}
+      />
 
       {/* Fixed header */}
       <View style={[styles.header, {
@@ -240,17 +250,26 @@ export default function LogScreen() {
         {/* Meet name */}
         <View style={styles.section}>
           <Text style={[styles.sectionLabel, { color: colors.mutedForeground }]}>MEET NAME  (optional)</Text>
-          <View style={[styles.meetCard, { backgroundColor: colors.card, borderColor: colors.border }]}>
+          <TouchableOpacity
+            style={[styles.meetCard, { backgroundColor: colors.card, borderColor: colors.border }]}
+            onPress={() => setMeetSheetOpen(true)}
+            activeOpacity={0.7}
+          >
             <Feather name="flag" size={15} color={colors.mutedForeground} style={{ marginRight: 8 }} />
-            <TextInput
-              style={[styles.meetInput, { color: colors.foreground }]}
-              placeholder="e.g. NJ Sectionals"
-              placeholderTextColor={colors.mutedForeground}
-              value={meetName}
-              onChangeText={setMeetName}
-              returnKeyType="next"
-            />
-          </View>
+            <Text style={[styles.meetInput, { color: meetName ? colors.foreground : colors.mutedForeground, flex: 1 }]} numberOfLines={1}>
+              {meetName || 'Tap to pick a meet…'}
+            </Text>
+            {meetName ? (
+              <TouchableOpacity onPress={() => { setMeetName(''); setMeetLocation(''); }} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
+                <Feather name="x" size={15} color={colors.mutedForeground} />
+              </TouchableOpacity>
+            ) : (
+              <Feather name="chevron-right" size={15} color={colors.mutedForeground} />
+            )}
+          </TouchableOpacity>
+          {!!meetLocation && (
+            <Text style={[styles.meetLocationHint, { color: colors.mutedForeground }]}>{meetLocation}</Text>
+          )}
         </View>
 
         {/* Time input */}
@@ -396,6 +415,7 @@ const styles = StyleSheet.create({
   eventChipText: { fontFamily: 'Inter_600SemiBold', fontSize: 13 },
   meetCard: { borderRadius: 12, borderWidth: 1, paddingHorizontal: 14, paddingVertical: 12, flexDirection: 'row', alignItems: 'center' },
   meetInput: { flex: 1, fontFamily: 'Inter_400Regular', fontSize: 15 },
+  meetLocationHint: { fontFamily: 'Inter_400Regular', fontSize: 12, marginTop: 4, marginLeft: 2 },
   timeCard: { borderRadius: 14, borderWidth: 1.5, paddingHorizontal: 16, paddingVertical: 12, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
   timeInput: { fontFamily: 'Inter_700Bold', fontSize: 32, flex: 1 },
   parsedDisplay: { fontFamily: 'Inter_600SemiBold', fontSize: 13 },

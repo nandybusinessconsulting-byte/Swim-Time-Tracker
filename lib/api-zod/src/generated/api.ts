@@ -14,3 +14,19 @@ import * as zod from "zod";
 export const HealthCheckResponse = zod.object({
   status: zod.string(),
 });
+
+/**
+ * Returns upcoming NJ swim meets scraped from SwimCloud, cached for 1 hour
+ * @summary List upcoming NJ swim meets
+ */
+export const ListMeetsResponse = zod.object({
+  meets: zod.array(
+    zod.object({
+      name: zod.string(),
+      location: zod.string(),
+      date: zod.string(),
+      url: zod.string(),
+    }),
+  ),
+  cachedAt: zod.string(),
+});

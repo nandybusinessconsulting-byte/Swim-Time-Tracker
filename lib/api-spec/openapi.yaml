@@ -10,6 +10,8 @@ servers:
 tags:
   - name: health
     description: Health operations
+  - name: meets
+    description: Swim meet operations
 paths:
   /healthz:
     get:
@@ -24,6 +26,19 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/HealthStatus"
+  /meets:
+    get:
+      operationId: listMeets
+      tags: [meets]
+      summary: List upcoming NJ swim meets
+      description: Returns upcoming NJ swim meets scraped from SwimCloud, cached for 1 hour
+      responses:
+        "200":
+          description: List of meets
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MeetListResponse"
 components:
   schemas:
     HealthStatus:
@@ -33,4 +48,32 @@ components:
           type: string
       required:
         - status
+    SwimMeet:
+      type: object
+      properties:
+        name:
+          type: string
+        location:
+          type: string
+        date:
+          type: string
+        url:
+          type: string
+      required:
+        - name
+        - location
+        - date
+        - url
+    MeetListResponse:
+      type: object
+      properties:
+        meets:
+          type: array
+          items:
+            $ref: "#/components/schemas/SwimMeet"
+        cachedAt:
+          type: string
+      required:
+        - meets
+        - cachedAt
 

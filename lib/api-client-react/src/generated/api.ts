@@ -13,7 +13,7 @@ import type {
   UseQueryResult,
 } from "@tanstack/react-query";
 
-import type { HealthStatus } from "./api.schemas";
+import type { HealthStatus, MeetListResponse } from "./api.schemas";
 
 import { customFetch } from "../custom-fetch";
 import type { ErrorType } from "../custom-fetch";
@@ -92,6 +92,74 @@ export function useHealthCheck<
   request?: SecondParameter<typeof customFetch>;
 }): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
   const queryOptions = getHealthCheckQueryOptions(options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+/**
+ * Returns upcoming NJ swim meets scraped from SwimCloud, cached for 1 hour
+ * @summary List upcoming NJ swim meets
+ */
+export const getListMeetsUrl = () => {
+  return `/api/meets`;
+};
+
+export const listMeets = async (
+  options?: RequestInit,
+): Promise<MeetListResponse> => {
+  return customFetch<MeetListResponse>(getListMeetsUrl(), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getListMeetsQueryKey = () => {
+  return [`/api/meets`] as const;
+};
+
+export const getListMeetsQueryOptions = <
+  TData = Awaited<ReturnType<typeof listMeets>>,
+  TError = ErrorType<unknown>,
+>(options?: {
+  query?: UseQueryOptions<Awaited<ReturnType<typeof listMeets>>, TError, TData>;
+  request?: SecondParameter<typeof customFetch>;
+}) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey = queryOptions?.queryKey ?? getListMeetsQueryKey();
+
+  const queryFn: QueryFunction<Awaited<ReturnType<typeof listMeets>>> = ({
+    signal,
+  }) => listMeets({ signal, ...requestOptions });
+
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof listMeets>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type ListMeetsQueryResult = NonNullable<
+  Awaited<ReturnType<typeof listMeets>>
+>;
+export type ListMeetsQueryError = ErrorType<unknown>;
+
+/**
+ * @summary List upcoming NJ swim meets
+ */
+
+export function useListMeets<
+  TData = Awaited<ReturnType<typeof listMeets>>,
+  TError = ErrorType<unknown>,
+>(options?: {
+  query?: UseQueryOptions<Awaited<ReturnType<typeof listMeets>>, TError, TData>;
+  request?: SecondParameter<typeof customFetch>;
+}): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getListMeetsQueryOptions(options);
 
   const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
     queryKey: QueryKey;

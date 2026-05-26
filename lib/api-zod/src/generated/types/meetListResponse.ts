@@ -5,7 +5,9 @@
  * API specification
  * OpenAPI spec version: 0.1.0
  */
+import type { SwimMeet } from "./swimMeet";
 
-export * from "./healthStatus";
-export * from "./meetListResponse";
-export * from "./swimMeet";
+export interface MeetListResponse {
+  meets: SwimMeet[];
+  cachedAt: string;
+}

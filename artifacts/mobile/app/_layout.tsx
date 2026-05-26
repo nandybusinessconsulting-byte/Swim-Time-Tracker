@@ -13,8 +13,16 @@ import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { KeyboardProvider } from 'react-native-keyboard-controller';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 
+import { setBaseUrl } from '@workspace/api-client-react';
 import { ErrorBoundary } from '@/components/ErrorBoundary';
 import { SwimProvider } from '@/context/SwimContext';
+
+// Point the API client at the shared proxy so the Expo app can reach the API
+// server regardless of whether it's running locally or deployed.
+const domain = process.env.EXPO_PUBLIC_DOMAIN;
+if (domain) {
+  setBaseUrl(`https://${domain}`);
+}
 
 SplashScreen.preventAutoHideAsync();
 
