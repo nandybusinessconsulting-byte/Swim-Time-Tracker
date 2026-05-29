@@ -5,8 +5,8 @@
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
-    "scheme": "mobile",
-    "userInterfaceStyle": "light",
+    "scheme": "swimtrack",
+    "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
     "splash": {
       "image": "./assets/images/icon.png",
@@ -14,9 +14,16 @@
       "backgroundColor": "#0070CC"
     },
     "ios": {
-      "supportsTablet": false
+      "bundleIdentifier": "com.nandybusinessconsulting.swimtrack",
+      "buildNumber": "1",
+      "supportsTablet": false,
+      "requireFullScreen": true,
+      "infoPlist": {
+        "NSPhotoLibraryUsageDescription": "SwimTrack uses your photo library to set a swimmer profile photo.",
+        "NSCameraUsageDescription": "SwimTrack uses your camera to take a swimmer profile photo.",
+        "ITSAppUsesNonExemptEncryption": false
+      }
     },
-    "android": {},
     "web": {
       "favicon": "./assets/images/icon.png"
     },
@@ -28,7 +35,14 @@
         }
       ],
       "expo-font",
-      "expo-web-browser"
+      "expo-web-browser",
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "SwimTrack uses your photo library to set a swimmer profile photo.",
+          "cameraPermission": "SwimTrack uses your camera to take a swimmer profile photo."
+        }
+      ]
     ],
     "experiments": {
       "typedRoutes": true,
