@@ -4,22 +4,19 @@ workflows:
     max_build_duration: 120
     environment:
       node: v20
-      vars:
-        EXPO_PUBLIC_DOMAIN: ""
       groups:
         - expo_credentials
     scripts:
       - name: Install pnpm and EAS CLI
-        script: npm install -g pnpm eas-cli
-
+        script: |
+          npm install -g pnpm eas-cli
       - name: Install dependencies
-        script: pnpm install --frozen-lockfile
-
-      - name: Build and submit to App Store via EAS
+        script: |
+          pnpm install --frozen-lockfile
+      - name: Build and submit via EAS
         script: |
           cd artifacts/mobile
           eas build --platform ios --profile production --non-interactive --wait
           eas submit --platform ios --latest --non-interactive
-
     artifacts:
       - artifacts/mobile/*.ipa
