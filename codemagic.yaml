@@ -7,10 +7,9 @@ workflows:
       groups:
         - expo_credentials
     scripts:
-      - name: Enable pnpm
+      - name: Install pnpm
         script: |
-          corepack enable
-          corepack prepare pnpm@9 --activate
+          sudo npm install -g pnpm@9
           pnpm --version
       - name: Install dependencies
         script: |
