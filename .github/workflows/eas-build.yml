@@ -13,7 +13,7 @@ jobs:
       - name: Setup Node
         uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: 24
 
       - name: Setup pnpm
         uses: pnpm/action-setup@v4
@@ -23,7 +23,7 @@ jobs:
       - name: Install dependencies
         run: pnpm install --no-frozen-lockfile
 
-      - name: Build and submit via EAS
+      - name: Build via EAS
         working-directory: artifacts/mobile
         run: npx eas-cli build --platform ios --profile production --non-interactive --wait
         env:
