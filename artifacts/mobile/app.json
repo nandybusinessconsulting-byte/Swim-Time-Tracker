@@ -3,6 +3,12 @@
     "name": "SwimTrack",
     "slug": "mobile",
     "version": "1.0.0",
+    "owner": "nandybusinessconsulting",
+    "extra": {
+      "eas": {
+        "projectId": "8b84716b-94bc-4202-abd2-b00eaf2d8375"
+      }
+    },
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
     "scheme": "swimtrack",
