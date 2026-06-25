@@ -7,16 +7,20 @@ workflows:
       groups:
         - expo_credentials
     scripts:
-      - name: Install pnpm and EAS CLI
+      - name: Enable pnpm
         script: |
-          npm install -g pnpm eas-cli
+          corepack enable
+          corepack prepare pnpm@latest --activate
       - name: Install dependencies
         script: |
           pnpm install --frozen-lockfile
-      - name: Build and submit via EAS
+      - name: Build via EAS
         script: |
           cd artifacts/mobile
-          eas build --platform ios --profile production --non-interactive --wait
-          eas submit --platform ios --latest --non-interactive
+          npx eas-cli build --platform ios --profile production --non-interactive --wait
+      - name: Submit to App Store
+        script: |
+          cd artifacts/mobile
+          npx eas-cli submit --platform ios --latest --non-interactive
     artifacts:
       - artifacts/mobile/*.ipa
